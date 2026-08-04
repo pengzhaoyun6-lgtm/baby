@@ -1,0 +1,3270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4A9AE8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="宝宝启蒙台">
+<title>宝宝启蒙台</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234A9AE8'/%3E%3Ccircle cx='38' cy='42' r='12' fill='%23fff'/%3E%3Ccircle cx='62' cy='42' r='12' fill='%23fff'/%3E%3Cpath d='M30 62 Q50 78 70 62' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234A9AE8'/%3E%3Ccircle cx='38' cy='42' r='12' fill='%23fff'/%3E%3Ccircle cx='62' cy='42' r='12' fill='%23fff'/%3E%3Cpath d='M30 62 Q50 78 70 62' stroke='%23fff' stroke-width='6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --blue:#4A9AE8; --blue-light:#EAF4FF; --green:#34B37E; --green-light:#E8F8F1;
+  --gold:#E8A300; --gold-light:#FFF7E0; --pink:#F08BAE; --pink-light:#FDEFF5;
+  --purple:#7B5FA0; --purple-light:#F3E8FF;
+  --text:#2D3748; --text-sub:#718096; --text-faint:#A0AEC0;
+  --bg:#F5F9FF; --card:#FFFFFF; --border:#E8EEF7;
+  --danger:#E53E3E;
+  --radius:16px;
+  --shadow:0 1px 3px rgba(74,154,232,.08), 0 4px 16px rgba(74,154,232,.06);
+  --nav-h:60px;
+}
+/* 深色模式（手动开关或跟随系统） */
+body.dark{
+  --blue:#5CA8F5; --blue-light:#1E3A5C; --green:#3EC28B; --green-light:#14352A;
+  --gold:#F0B429; --gold-light:#3A2E10; --pink:#F08BAE; --pink-light:#3A2230;
+  --purple:#9B7FD0; --purple-light:#2E2345;
+  --text:#E8EDF5; --text-sub:#9AA7B8; --text-faint:#66748A;
+  --bg:#0F1724; --card:#1A2334; --border:#2A3650;
+  --danger:#F56565;
+  --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+}
+@media (prefers-color-scheme: dark){
+  body.auto-dark{ --blue:#5CA8F5; --blue-light:#1E3A5C; --green:#3EC28B; --green-light:#14352A;
+  --gold:#F0B429; --gold-light:#3A2E10; --pink:#F08BAE; --pink-light:#3A2230;
+  --purple:#9B7FD0; --purple-light:#2E2345;
+  --text:#E8EDF5; --text-sub:#9AA7B8; --text-faint:#66748A;
+  --bg:#0F1724; --card:#1A2334; --border:#2A3650;
+  --danger:#F56565;
+  --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25); }
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--text); font-size:16px; line-height:1.5;
+  min-height:100%; -webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));
+  overscroll-behavior-y:none;
+}
+button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
+input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
+
+/* ===== Header ===== */
+.app-header{
+  position:sticky;top:0;z-index:50;
+  background:linear-gradient(135deg,#4A9AE8,#6BB6FF);
+  color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.header-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+.baby-avatar{
+  width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:22px;
+}
+.header-info{min-width:0}
+.header-title{font-size:17px;font-weight:700;display:flex;align-items:center;gap:6px}
+.header-age{font-size:12px;opacity:.9}
+.header-actions{display:flex;gap:6px;flex-shrink:0}
+.header-btn{
+  width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.18);
+  display:flex;align-items:center;justify-content:center;font-size:19px;
+  min-height:44px;
+}
+.recorder-chip{
+  display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.18);
+  border-radius:20px;padding:5px 12px;font-size:13px;font-weight:600;
+  min-height:44px;
+}
+
+/* ===== Tabs ===== */
+.tab-panel{display:none;padding:14px 14px 20px;max-width:640px;margin:0 auto}
+.tab-panel.active{display:block;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ===== Cards ===== */
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card-title{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.card-title .sub{font-size:12px;color:var(--text-sub);font-weight:400}
+
+/* ===== Feed (home) ===== */
+.feed-hero{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.feed-hero-btn{
+  border-radius:20px;padding:22px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  min-height:120px;transition:transform .1s;
+}
+.feed-hero-btn:active{transform:scale(.96)}
+.feed-hero-btn .icon{font-size:38px;line-height:1}
+.feed-hero-btn .name{font-size:18px;font-weight:700}
+.feed-hero-btn .hint{font-size:12px;opacity:.85}
+.feed-hero-btn.bottle{background:var(--blue-light);color:var(--blue)}
+.feed-hero-btn.voice{background:var(--purple-light);color:var(--purple)}
+.last-feed-bar{
+  display:flex;align-items:center;gap:8px;background:var(--blue-light);color:var(--blue);
+  border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;margin-bottom:14px;
+}
+.last-feed-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--blue);animation:pulse 1.6s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.quick-amount{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.quick-amount button{
+  background:var(--card);border:1.5px solid var(--border);border-radius:12px;
+  padding:10px 4px;font-size:14px;font-weight:700;color:var(--blue);min-height:44px;
+}
+.quick-amount button:active{background:var(--blue);color:#fff;transform:scale(.96)}
+.diaper-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.diaper-btn{
+  border-radius:14px;padding:14px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;
+  min-height:80px;transition:transform .1s;border:1.5px solid transparent;
+}
+.diaper-btn:active{transform:scale(.96)}
+.diaper-btn .icon{font-size:24px}
+.diaper-btn .name{font-size:15px;font-weight:700}
+.diaper-btn .hint{font-size:11px;opacity:.8}
+.diaper-btn.pee{background:var(--blue-light);color:var(--blue)}
+.diaper-btn.poop{background:var(--gold-light);color:#B8860B}
+.diaper-btn.vit{background:var(--green-light);color:var(--green)}
+.poop-state-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.poop-state-btn{
+  flex:1;min-width:70px;border-radius:10px;padding:9px 6px;font-size:13px;font-weight:600;
+  background:var(--bg);color:var(--text-sub);min-height:38px;border:1.5px solid var(--border);
+}
+.poop-state-btn.active{background:var(--gold-light);color:#B8860B;border-color:#E8C46A}
+.feed-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.feed-stat{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 8px;text-align:center}
+.feed-stat .num{font-size:22px;font-weight:800}
+.feed-stat .lbl{font-size:11px;color:var(--text-sub);margin-top:2px}
+.feed-stat.blue .num{color:var(--blue)} .feed-stat.pink .num{color:#E0709A} .feed-stat.gold .num{color:var(--gold)}
+.feed-list{display:flex;flex-direction:column;gap:8px}
+.feed-item{
+  display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;
+  box-shadow:var(--shadow);padding:12px 14px;
+}
+.feed-item .f-time{font-size:15px;font-weight:700;width:52px;flex-shrink:0}
+.feed-item .f-icon{font-size:20px;flex-shrink:0}
+.feed-item .f-body{flex:1;min-width:0}
+.feed-item .f-title{font-size:14px;font-weight:600}
+.feed-item .f-desc{font-size:12px;color:var(--text-sub)}
+.feed-item .f-rec{font-size:11px;color:var(--text-faint);background:var(--bg);border-radius:8px;padding:2px 8px;flex-shrink:0}
+.feed-item .f-del{width:38px;height:38px;min-height:38px;border-radius:10px;color:var(--text-faint);font-size:17px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.feed-empty{text-align:center;color:var(--text-faint);font-size:13px;padding:26px 0}
+
+/* ===== Sleep ===== */
+.sleep-hero{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.sleep-btn{border-radius:20px;padding:22px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;min-height:120px}
+.sleep-btn:active{transform:scale(.96)}
+.sleep-btn .icon{font-size:36px}
+.sleep-btn .name{font-size:17px;font-weight:700}
+.sleep-btn .hint{font-size:12px;opacity:.85}
+.sleep-btn.start{background:linear-gradient(135deg,#5A6FE0,#7B5FA0);color:#fff}
+.sleep-btn.end{background:linear-gradient(135deg,#FFB347,#FF8C42);color:#fff}
+.sleep-summary{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  background:var(--purple-light);color:var(--purple);border-radius:14px;
+  padding:16px;font-size:15px;font-weight:700;margin-bottom:14px;
+}
+.sleep-summary .big{font-size:24px}
+.sleep-list{display:flex;flex-direction:column;gap:8px}
+.sleep-item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px}
+.sleep-item .s-date{font-size:13px;font-weight:600;width:66px;flex-shrink:0;color:var(--text-sub)}
+.sleep-item .s-range{flex:1;font-size:14px;font-weight:600}
+.sleep-item .s-dur{font-size:13px;color:var(--purple);font-weight:700}
+.sleep-item .s-del{width:38px;height:38px;min-height:38px;border-radius:10px;color:var(--text-faint);font-size:17px;flex-shrink:0}
+
+/* ===== Growth ===== */
+.metric-tabs{display:flex;gap:8px;margin-bottom:14px}
+.metric-tab{
+  flex:1;padding:10px 0;border-radius:12px;background:var(--card);box-shadow:var(--shadow);
+  font-size:14px;font-weight:600;color:var(--text-sub);min-height:44px;
+}
+.metric-tab.active{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(74,154,232,.35)}
+.chart-box{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px;margin-bottom:14px;overflow:hidden}
+.chart-box svg{width:100%;height:auto;display:block}
+.chart-legend{display:flex;gap:14px;justify-content:center;font-size:11px;color:var(--text-sub);padding-top:8px;flex-wrap:wrap}
+.legend-item{display:flex;align-items:center;gap:5px}
+.legend-line{width:16px;height:3px;border-radius:2px}
+.legend-band{width:16px;height:8px;border-radius:2px}
+.growth-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.growth-form .full{grid-column:1/-1}
+.field label{display:block;font-size:12px;color:var(--text-sub);margin-bottom:4px;font-weight:600}
+.field input{
+  width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 12px;
+  background:var(--bg);min-height:44px;outline:none;
+}
+.field input:focus{border-color:var(--blue);background:#fff}
+.btn-primary{
+  width:100%;background:var(--blue);color:#fff;border-radius:14px;padding:14px;
+  font-size:16px;font-weight:700;min-height:50px;box-shadow:0 4px 12px rgba(74,154,232,.3);
+}
+.btn-primary:active{transform:scale(.98)}
+.growth-list{display:flex;flex-direction:column;gap:8px}
+.growth-item{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 14px}
+.growth-item .g-date{font-size:13px;font-weight:600;width:80px;flex-shrink:0;color:var(--text-sub)}
+.growth-item .g-vals{flex:1;font-size:13px;display:flex;gap:10px;flex-wrap:wrap}
+.growth-item .g-vals span b{font-size:14px}
+.growth-item .g-del{width:38px;height:38px;min-height:38px;border-radius:10px;color:var(--text-faint);font-size:17px;flex-shrink:0}
+.g-w{color:var(--blue)} .g-h{color:var(--green)} .g-hc{color:#E0709A}
+
+/* ===== Play ===== */
+.play-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.play-stat{background:var(--card);border-radius:14px;box-shadow:var(--shadow);padding:12px 8px;text-align:center}
+.play-stat .num{font-size:22px;font-weight:800;color:var(--blue)}
+.play-stat .lbl{font-size:11px;color:var(--text-sub);margin-top:2px}
+.play-stage-badge{
+  display:inline-flex;align-items:center;gap:6px;background:var(--green-light);color:var(--green);
+  font-size:12px;font-weight:700;border-radius:20px;padding:5px 12px;margin-bottom:10px;
+}
+.task-list{display:flex;flex-direction:column;gap:8px}
+.task-item{
+  display:flex;align-items:center;gap:12px;background:var(--card);border-radius:14px;
+  box-shadow:var(--shadow);padding:12px 14px;min-height:60px;
+}
+.task-check{
+  width:30px;height:30px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;
+}
+.task-check svg{width:16px;height:16px;stroke:#fff;stroke-width:3;fill:none;opacity:0}
+.task-item.done .task-check{background:var(--green);border-color:var(--green)}
+.task-item.done .task-check svg{opacity:1}
+.task-item.done .task-name{color:var(--text-faint);text-decoration:line-through}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:15px;font-weight:600}
+.task-meta{display:flex;gap:8px;font-size:11px;color:var(--text-sub);margin-top:2px;flex-wrap:wrap}
+.cat-badge{background:var(--blue-light);color:var(--blue);border-radius:8px;padding:1px 8px;font-weight:600}
+.dur-badge{background:var(--bg);border-radius:8px;padding:1px 8px}
+
+/* Milestone */
+.ms-cat{margin-bottom:14px}
+.ms-cat-header{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.ms-cat-header svg{width:18px;height:18px;color:var(--blue)}
+.ms-list{display:flex;flex-direction:column;gap:6px}
+.ms-item{
+  display:flex;align-items:center;gap:10px;background:var(--card);border-radius:12px;
+  box-shadow:var(--shadow);padding:10px 12px;min-height:52px;
+}
+.ms-status{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;
+}
+.ms-status.pending{background:var(--border);color:var(--text-sub)}
+.ms-status.progress{background:var(--gold)}
+.ms-status.achieved{background:var(--green)}
+.ms-info{flex:1;min-width:0}
+.ms-name{font-size:14px;font-weight:600}
+.ms-range{font-size:11px;color:var(--text-faint)}
+.ms-date{font-size:11px;color:var(--text-sub);flex-shrink:0}
+
+/* ===== Bottom Nav ===== */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:var(--card);
+  border-top:1px solid var(--border);
+  display:flex;height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--text-faint)}
+.nav-item svg{width:23px;height:23px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-item span{font-size:10px;font-weight:600}
+.nav-item.active{color:var(--blue)}
+
+/* ===== Stats Tab ===== */
+.range-tabs{display:flex;gap:8px;margin-bottom:12px}
+.range-tab{flex:1;padding:8px 0;border-radius:10px;background:var(--bg);font-size:13px;font-weight:600;color:var(--text-sub);min-height:40px}
+.range-tab.active{background:var(--blue);color:#fff}
+.insight-box{background:var(--green-light);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--green);margin-top:10px;line-height:1.7}
+.insight-box.gray{background:var(--bg);color:var(--text-sub)}
+.report-line{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.report-line:last-child{border-bottom:none}
+.report-line .lbl{color:var(--text-sub);font-size:13px}
+.report-line .val{font-weight:700}
+.report-badge{display:inline-flex;align-items:center;gap:4px;background:var(--green-light);color:var(--green);border-radius:10px;padding:3px 10px;font-size:12px;font-weight:700}
+.report-badge.warn{background:var(--gold-light);color:var(--gold)}
+.report-badge.alert{background:var(--pink-light);color:#E0709A}
+
+/* ===== Bottom Sheet ===== */
+.sheet-mask{
+  position:fixed;inset:0;z-index:200;background:rgba(20,30,50,.45);
+  display:none;align-items:flex-end;justify-content:center;
+}
+.sheet-mask.show{display:flex;animation:fadeIn .18s}
+.sheet{
+  background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:640px;
+  padding:14px 18px calc(20px + env(safe-area-inset-bottom));
+  animation:sheetUp .22s ease;
+}
+@keyframes sheetUp{from{transform:translateY(60px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-grab{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+.sheet-title{font-size:17px;font-weight:700;text-align:center;margin-bottom:16px}
+.sheet-row{display:flex;gap:10px;margin-bottom:12px}
+.sheet-btn{
+  flex:1;border-radius:14px;padding:14px 10px;font-size:14px;font-weight:700;
+  border:2px solid var(--border);min-height:52px;transition:all .12s;
+}
+.sheet-btn.active{border-color:var(--blue);background:var(--blue-light);color:var(--blue)}
+.stepper{display:flex;align-items:center;gap:0;border:2px solid var(--border);border-radius:14px;overflow:hidden}
+.stepper button{width:52px;min-height:52px;font-size:22px;font-weight:700;color:var(--text-sub);background:var(--bg)}
+.stepper .val{flex:1;text-align:center;font-size:18px;font-weight:800;padding:12px 4px;min-height:52px;display:flex;align-items:center;justify-content:center}
+.stepper .unit{font-size:12px;color:var(--text-sub);font-weight:600;padding-right:10px}
+.sheet-note{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 12px;background:#FAFCFF;min-height:44px;margin-bottom:12px;outline:none}
+.sheet-note:focus{border-color:var(--blue)}
+.btn-big{
+  width:100%;border-radius:16px;padding:16px;font-size:17px;font-weight:800;min-height:54px;color:#fff;
+  box-shadow:0 4px 14px rgba(74,154,232,.3);
+}
+.btn-big.green{background:var(--green);box-shadow:0 4px 14px rgba(52,179,126,.3)}
+.btn-big.blue{background:var(--blue)}
+.btn-big.purple{background:var(--purple)}
+.btn-ghost{width:100%;border-radius:16px;padding:13px;font-size:15px;font-weight:600;color:var(--text-sub);background:var(--bg);min-height:50px;margin-top:8px}
+
+/* ===== Modal ===== */
+.modal-mask{
+  position:fixed;inset:0;z-index:300;background:rgba(20,30,50,.5);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.modal-mask.show{display:flex;animation:fadeIn .15s}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:420px;padding:22px;max-height:84vh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:800;margin-bottom:16px;text-align:center}
+.modal-close{float:right;font-size:22px;color:var(--text-faint);width:36px;height:36px;display:flex;align-items:center;justify-content:center;margin:-8px -8px 0 0}
+
+/* ===== Toast ===== */
+#toast{
+  position:fixed;top:calc(70px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-16px);
+  background:rgba(30,40,60,.92);color:#fff;font-size:14px;font-weight:600;
+  padding:10px 20px;border-radius:30px;z-index:400;opacity:0;pointer-events:none;
+  transition:all .25s;max-width:86%;text-align:center;
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== Settings ===== */
+.set-row{margin-bottom:14px}
+.set-row label{display:block;font-size:13px;color:var(--text-sub);font-weight:600;margin-bottom:6px}
+.set-row input,.set-row select{
+  width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 12px;
+  background:var(--bg);min-height:46px;outline:none;font-size:16px;
+}
+.set-row input:focus,.set-row select:focus{border-color:var(--blue)}
+.member-list{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px}
+.member-chip{
+  display:flex;align-items:center;gap:6px;background:var(--bg);border-radius:20px;
+  padding:7px 12px;font-size:13px;font-weight:600;min-height:38px;
+}
+.member-chip .rm{color:var(--text-faint);font-size:15px;width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.member-chip.current{border:2px solid var(--blue);background:var(--blue-light);color:var(--blue)}
+.add-member{display:flex;gap:8px;margin-top:4px}
+.add-member input{flex:1;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;min-height:44px;font-size:14px;background:#FAFCFF;outline:none}
+.add-member button{border-radius:12px;background:var(--blue);color:#fff;padding:0 16px;font-weight:700;min-height:44px;font-size:14px}
+.danger-zone{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+.btn-danger{
+  width:100%;border-radius:14px;padding:13px;font-size:15px;font-weight:700;
+  color:var(--danger);background:#FEF2F2;border:1.5px solid #FCD5D5;min-height:48px;
+}
+.about-note{font-size:12px;color:var(--text-faint);text-align:center;margin-top:16px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ===== Header ===== -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="baby-avatar" id="babyAvatar">👶</div>
+    <div class="header-info">
+      <div class="header-title"><span id="babyName">宝宝</span><span id="babyAge">0个月</span></div>
+      <div class="header-age" id="babyStageLabel">启蒙阶段：0-3个月</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="recorder-chip" id="recorderChip" onclick="cycleRecorder()">👩 妈妈</button>
+    <button class="header-btn" onclick="openSettings()" aria-label="设置">⚙️</button>
+  </div>
+</header>
+
+<main>
+  <!-- ===== Tab 1: 喂奶 ===== -->
+  <section class="tab-panel active" id="panel-feed">
+    <div class="feed-hero">
+      <button class="feed-hero-btn bottle" onclick="openFeedSheet('bottle')">
+        <div class="icon">🍼</div>
+        <div class="name">瓶喂</div>
+        <div class="hint" id="bottleHint">上次 120ml · 点一下记录</div>
+      </button>
+      <button class="feed-hero-btn voice" onclick="openVoiceSheet()">
+        <div class="icon">🎤</div>
+        <div class="name">语音记录</div>
+        <div class="hint">说"12点半吃奶150"</div>
+      </button>
+    </div>
+    <div class="last-feed-bar" id="lastFeedBar"><span class="dot"></span><span id="lastFeedText">今天还没有喂奶记录</span></div>
+    <div class="quick-amount" id="quickAmountBar">
+      <button onclick="quickFeed(90)">90ml</button>
+      <button onclick="quickFeed(120)">120ml</button>
+      <button onclick="quickFeed(150)">150ml</button>
+      <button onclick="quickFeed(180)">180ml</button>
+    </div>
+    <div class="feed-stats">
+      <div class="feed-stat blue"><div class="num" id="statBottle">0</div><div class="lbl">瓶喂次数</div></div>
+      <div class="feed-stat gold"><div class="num" id="statTotalML">0</div><div class="lbl">今日总奶量(ml)</div></div>
+      <div class="feed-stat pink"><div class="num" id="statTotal">0</div><div class="lbl">今日总次数</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">今日喂奶 <span class="sub">点击条目可删除</span></div>
+      <div class="feed-list" id="feedList"></div>
+    </div>
+
+    <!-- 大小便记录 -->
+    <div class="card">
+      <div class="card-title">🚼 大小便 <span class="sub">尿布记录</span></div>
+      <div class="diaper-btns">
+        <button class="diaper-btn pee" onclick="openDiaperSheet('pee')">
+          <span class="icon">💧</span>
+          <span class="name">尿</span>
+          <span class="hint">小便</span>
+        </button>
+        <button class="diaper-btn poop" onclick="openDiaperSheet('poop')">
+          <span class="icon">💩</span>
+          <span class="name">便</span>
+          <span class="hint">大便</span>
+        </button>
+      </div>
+      <div class="feed-list" id="diaperList" style="margin-top:10px"></div>
+    </div>
+
+    <!-- 维生素记录 -->
+    <div class="card">
+      <div class="card-title">💊 维生素 <span class="sub">AD / D3</span></div>
+      <div class="diaper-btns">
+        <button class="diaper-btn vit" onclick="addVitRecord('vitAD')">
+          <span class="icon">💊</span>
+          <span class="name">维生素AD</span>
+          <span class="hint">点一下记录</span>
+        </button>
+        <button class="diaper-btn vit" onclick="addVitRecord('vitD3')">
+          <span class="icon">☀️</span>
+          <span class="name">维生素D3</span>
+          <span class="hint">点一下记录</span>
+        </button>
+      </div>
+      <div class="feed-list" id="vitList" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 2: 睡眠 ===== -->
+  <section class="tab-panel" id="panel-sleep">
+    <div class="sleep-hero">
+      <button class="sleep-btn start" onclick="markSleepStart()">
+        <div class="icon">🌙</div>
+        <div class="name">入睡</div>
+        <div class="hint">点一下记录时间</div>
+      </button>
+      <button class="sleep-btn end" onclick="markSleepEnd()">
+        <div class="icon">☀️</div>
+        <div class="name">起床</div>
+        <div class="hint">点一下记录时间</div>
+      </button>
+    </div>
+    <div class="sleep-hero" style="margin-top:-4px">
+      <button class="feed-hero-btn voice" style="grid-column:1/-1;min-height:88px" onclick="openVoiceSheet('sleep')">
+        <div class="icon">🎤</div>
+        <div class="name">语音记录睡眠</div>
+        <div class="hint">说"昨晚九点半睡，早上六点起"</div>
+      </button>
+    </div>
+    <div class="sleep-summary" id="sleepSummary">🌙 昨晚睡了 <span class="big">--</span></div>
+    <div class="card">
+      <div class="card-title">近 7 晚睡眠 <span class="sub">只记晚上</span></div>
+      <div class="sleep-list" id="sleepList"></div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 3: 生长发育 ===== -->
+  <section class="tab-panel" id="panel-growth">
+    <button class="feed-hero-btn voice" style="width:100%;min-height:80px;margin-bottom:14px;display:flex" onclick="openVoiceSheet('growth')">
+      <div class="icon">🎤</div>
+      <div class="name">语音记录生长</div>
+      <div class="hint">说"体重6.5公斤，身高61，头围39.5"</div>
+    </button>
+    <div class="metric-tabs">
+      <button class="metric-tab active" id="mtab-weight" onclick="switchMetric('weight')">体重</button>
+      <button class="metric-tab" id="mtab-height" onclick="switchMetric('height')">身高</button>
+      <button class="metric-tab" id="mtab-head" onclick="switchMetric('headCirc')">头围</button>
+    </div>
+    <div class="chart-box">
+      <div id="chartContainer"></div>
+      <div class="chart-legend">
+        <span class="legend-item"><span class="legend-band" style="background:rgba(74,154,232,.12);border:1px solid #A8D4F7"></span>WHO正常范围</span>
+        <span class="legend-item"><span class="legend-line" style="background:#A0AEC0"></span>WHO中位数</span>
+        <span class="legend-item"><span class="legend-line" style="background:#4A9AE8"></span>宝宝</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">添加生长记录 <span class="sub" id="growthUnitHint">体重 kg / 身高 cm / 头围 cm</span></div>
+      <div class="growth-form">
+        <div class="field"><label>日期</label><input type="date" id="growthDate"></div>
+        <div class="field"><label>月龄(可留空自动算)</label><input type="text" id="growthAge" placeholder="如：3个月"></div>
+        <div class="field"><label>体重(kg)</label><input type="number" id="growthWeight" placeholder="如：6.5" step="0.01"></div>
+        <div class="field"><label>身高(cm)</label><input type="number" id="growthHeight" placeholder="如：61" step="0.1"></div>
+        <div class="field full"><label>头围(cm)</label><input type="number" id="growthHeadCirc" placeholder="如：39.5" step="0.1"></div>
+      </div>
+      <button class="btn-primary" onclick="addGrowthRecord()">保存记录</button>
+    </div>
+    <div class="card">
+      <div class="card-title">历史记录</div>
+      <div class="growth-list" id="growthList"></div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 4: 启蒙 ===== -->
+  <section class="tab-panel" id="panel-play">
+    <div class="play-progress">
+      <div class="play-stat"><div class="num" id="playDone">0</div><div class="lbl">今日完成</div></div>
+      <div class="play-stat"><div class="num" id="playTotal">0</div><div class="lbl">今日任务</div></div>
+      <div class="play-stat"><div class="num" id="playStreak">0</div><div class="lbl">连续天数</div></div>
+    </div>
+    <div class="play-stage-badge" id="playStageBadge">🌱 3-6个月</div>
+    <div class="card">
+      <div class="card-title">今日启蒙任务 <span class="sub">点圆圈打卡</span></div>
+      <div class="task-list" id="taskList"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">发育里程碑 <span class="sub">点击切换：待→进行中→已达成</span></div>
+      <div id="milestoneBoard"></div>
+    </div>
+  </section>
+
+  <!-- ===== Tab 5: 统计 ===== -->
+  <section class="tab-panel" id="panel-stats">
+    <div class="card">
+      <div class="card-title">📊 今日汇总 <span class="sub" id="statsDateLabel"></span></div>
+      <div class="feed-stats" style="margin-bottom:0">
+        <div class="feed-stat blue"><div class="num" id="stFeedCount">0</div><div class="lbl">喂奶次数</div></div>
+        <div class="feed-stat gold"><div class="num" id="stFeedML">0</div><div class="lbl">总奶量(ml)</div></div>
+        <div class="feed-stat purple" style="background:var(--purple-light)"><div class="num" id="stSleep" style="color:var(--purple)">0</div><div class="lbl">夜间睡眠</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div class="feed-stat"><div class="num" style="color:var(--green)" id="stTasks">0/0</div><div class="lbl">启蒙任务</div></div>
+        <div class="feed-stat"><div class="num" style="color:var(--gold)" id="stLastFeed">--</div><div class="lbl">上次喂奶</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+        <div class="feed-stat"><div class="num" style="color:var(--blue)" id="stDiaper">0</div><div class="lbl">尿布(尿/便)</div></div>
+        <div class="feed-stat"><div class="num" style="color:var(--green)" id="stVit">--</div><div class="lbl">维生素</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🍼 奶量趋势 <span class="sub" id="milkTrendSub"></span></div>
+      <div class="range-tabs">
+        <button class="range-tab active" onclick="switchMilkRange(7)">近7天</button>
+        <button class="range-tab" onclick="switchMilkRange(30)">近30天</button>
+      </div>
+      <div id="milkChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🌙 睡眠规律 <span class="sub">近7晚</span></div>
+      <div id="sleepTrendChart"></div>
+      <div id="sleepInsight" class="insight-box"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">🏅 生长发育报告</div>
+      <div id="growthReportCard"></div>
+      <button class="btn-primary" style="background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3)" onclick="showGrowthReport()">📄 生成报告</button>
+    </div>
+  </section>
+</main>
+
+<!-- ===== Bottom Nav ===== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="switchTab('feed')">
+    <svg viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M4 6h16v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6z"/><path d="M12 11v6M9 14h6"/></svg>
+    <span>喂奶</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('sleep')">
+    <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    <span>睡眠</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('growth')">
+    <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+    <span>生长</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('play')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>
+    <span>启蒙</span>
+  </button>
+  <button class="nav-item" onclick="switchTab('stats')">
+    <svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+    <span>统计</span>
+  </button>
+</nav>
+
+<!-- ===== Feed Sheet ===== -->
+<div class="sheet-mask" id="feedSheet">
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-title">🍼 记录瓶喂</div>
+    <div class="sheet-row">
+      <div class="stepper" id="feedStepper"></div>
+    </div>
+    <input class="sheet-note" id="feedNote" placeholder="备注（选填）：如 睡前奶、吐奶了">
+    <button class="btn-big green" onclick="saveFeedRecord()">✓ 记录</button>
+    <button class="btn-ghost" onclick="closeFeedSheet()">取消</button>
+  </div>
+</div>
+
+<!-- ===== Diaper Sheet ===== -->
+<div class="sheet-mask" id="diaperSheet">
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-title" id="diaperSheetTitle">💧 记录小便</div>
+    <div class="sheet-row">
+      <div class="stepper">
+        <button onclick="diaperTimeShift(-15)">−</button>
+        <div class="val" id="diaperTimeVal">--:--</div>
+        <button onclick="diaperTimeShift(15)">＋</button>
+      </div>
+    </div>
+    <input type="time" id="diaperTimeInput" class="sheet-note" style="display:none" onchange="syncDiaperTimeFromInput()">
+    <div class="poop-state-row" id="poopStateRow" style="display:none">
+      <button class="poop-state-btn" data-state="正常" onclick="setPoopState('正常')">正常</button>
+      <button class="poop-state-btn" data-state="稀" onclick="setPoopState('稀')">稀</button>
+      <button class="poop-state-btn" data-state="干" onclick="setPoopState('干')">干</button>
+      <button class="poop-state-btn" data-state="绿" onclick="setPoopState('绿')">绿</button>
+      <button class="poop-state-btn" data-state="黑" onclick="setPoopState('黑')">黑</button>
+    </div>
+    <input class="sheet-note" id="diaperNote" placeholder="备注（选填）：如 量多、有奶瓣">
+    <button class="btn-big green" onclick="saveDiaperRecord()">✓ 记录</button>
+    <button class="btn-ghost" onclick="closeDiaperSheet()">取消</button>
+  </div>
+</div>
+
+<!-- ===== Voice Sheet ===== -->
+<div class="sheet-mask" id="voiceSheet">
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-title" id="voiceSheetTitle">🎤 语音记录</div>
+    <div id="voiceListenArea">
+      <div style="text-align:center;padding:10px 0 6px">
+        <div style="font-size:52px;line-height:1" id="voiceMicIcon">🎤</div>
+        <div style="font-size:15px;font-weight:700;margin-top:12px" id="voiceStatus">点击开始说话</div>
+        <div style="font-size:12px;color:var(--text-sub);margin-top:4px" id="voiceHint">例：「十二点半，吃奶一百五十毫升」</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn-big purple" id="voiceStartBtn" onclick="voiceStart()">🎤 开始说话</button>
+      </div>
+    </div>
+    <div id="voiceResultArea" style="display:none">
+      <div style="background:var(--bg);border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--text-sub);font-weight:600;margin-bottom:4px">识别结果</div>
+        <div style="font-size:16px;font-weight:700" id="voiceRawText">—</div>
+      </div>
+      <div style="background:var(--blue-light);border-radius:14px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;color:var(--blue);font-weight:600;margin-bottom:6px">解析结果</div>
+        <div id="voiceParsed" style="font-size:15px;line-height:1.8"></div>
+      </div>
+      <button class="btn-big green" onclick="voiceConfirm()">✓ 确认记录</button>
+      <button class="btn-ghost" onclick="voiceRetry()">🔁 重新说一次</button>
+      <button class="btn-ghost" onclick="closeVoiceSheet()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Sleep Confirm Sheet ===== -->
+<div class="sheet-mask" id="sleepSheet">
+  <div class="sheet">
+    <div class="sheet-grab"></div>
+    <div class="sheet-title" id="sleepSheetTitle">记录入睡</div>
+    <div class="sheet-row">
+      <div class="stepper">
+        <button onclick="sleepTimeShift(-15)">−</button>
+        <div class="val" id="sleepTimeVal" onclick="document.getElementById('sleepTimeInput').showPicker && document.getElementById('sleepTimeInput').showPicker()">21:00</div>
+        <button onclick="sleepTimeShift(15)">＋</button>
+      </div>
+    </div>
+    <input type="time" id="sleepTimeInput" class="sheet-note" style="display:none" onchange="syncSleepTimeFromInput()">
+    <button class="btn-ghost" onclick="setSleepNow()">🕐 设为当前时间（<span id="sleepNowLabel">--:--</span>）</button>
+    <button class="btn-big purple" onclick="confirmSleep()">✓ 确认记录</button>
+    <button class="btn-ghost" onclick="closeSleepSheet()">取消</button>
+  </div>
+</div>
+
+<!-- ===== Settings Modal ===== -->
+<div class="modal-mask" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeSettings()">✕</button>
+    <div class="modal-title">⚙️ 设置</div>
+    <div class="set-row">
+      <label>宝宝昵称</label>
+      <input type="text" id="setName" placeholder="如：小豆丁">
+    </div>
+    <div class="set-row">
+      <label>出生日期</label>
+      <input type="date" id="setBirthday">
+    </div>
+    <div class="set-row">
+      <label>性别（用于生长曲线对照）</label>
+      <select id="setGender">
+        <option value="boy">男孩</option>
+        <option value="girl">女孩</option>
+      </select>
+    </div>
+    <div class="set-row">
+      <label>记录人（当前：<b id="setCurrentRec">妈妈</b>）</label>
+      <div class="member-list" id="memberList"></div>
+      <div class="add-member">
+        <input type="text" id="newMemberName" placeholder="添加成员，如：爷爷">
+        <button onclick="addMember()">添加</button>
+      </div>
+    </div>
+    <div class="set-row">
+      <label>外观模式</label>
+      <select id="setTheme" onchange="saveTheme(this.value)">
+        <option value="auto">跟随系统</option>
+        <option value="light">浅色</option>
+        <option value="dark">深色</option>
+      </select>
+    </div>
+    <div class="set-row">
+      <label>数据备份</label>
+      <div style="display:flex;gap:8px">
+        <button class="btn-primary" style="flex:1;font-size:14px" onclick="exportData()">📤 导出</button>
+        <label class="btn-primary" style="flex:1;font-size:14px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3)">📥 导入
+          <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
+        </label>
+      </div>
+    </div>
+    <div class="danger-zone">
+      <button class="btn-danger" onclick="confirmClear()">🗑 清空所有数据</button>
+    </div>
+    <div class="about-note">宝宝启蒙台 v2.0 · 单机版<br>数据只存在本机浏览器，请定期导出备份。<br>升级同步版时数据可无缝迁移。</div>
+  </div>
+</div>
+
+<!-- ===== Clear Confirm Modal ===== -->
+<div class="modal-mask" id="clearModal">
+  <div class="modal">
+    <div class="modal-title">⚠️ 确认清空？</div>
+    <p style="font-size:14px;color:var(--text-sub);text-align:center;margin-bottom:18px;line-height:1.7">将删除全部喂奶、睡眠、生长、启蒙记录，<b>无法恢复</b>。<br>建议先导出备份。</p>
+    <button class="btn-big blue" style="background:var(--danger);box-shadow:none;margin-bottom:8px" onclick="clearAllData()">确认清空</button>
+    <button class="btn-ghost" onclick="closeClearModal()">取消</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* =====================================================================
+ * 数据层（Data Layer）
+ * 所有读写都走 DB 对象。以后升级为云同步/局域网共享版时，
+ * 只需替换本对象的实现（接口不变），界面代码零改动。
+ * ===================================================================== */
+var PREFIX = 'wbb2_';
+
+var DB = {
+  _get: function(k, def){ try{ var v = localStorage.getItem(PREFIX+k); return v===null ? def : JSON.parse(v); }catch(e){ return def; } },
+  _set: function(k, v){ try{ localStorage.setItem(PREFIX+k, JSON.stringify(v)); }catch(e){ console.error('存储失败', e); } },
+  _del: function(k){ localStorage.removeItem(PREFIX+k); },
+
+  // 宝宝信息 {name, birthday:'YYYY-MM-DD', gender:'boy'|'girl', recorder}
+  getBaby: function(){ return this._get('baby', null); },
+  setBaby: function(b){ this._set('baby', b); },
+
+  // 喂奶记录 [{id, ts:ISO, type:'breast'|'bottle', side:'left'|'right'|'both', value:数字, unit:'min'|'ml', note, recorder}]
+  getFeeds: function(){ return this._get('feeds', []); },
+  setFeeds: function(a){ this._set('feeds', a); },
+
+  // 睡眠记录 [{id, date:'YYYY-MM-DD'(入睡日期), start:'HH:MM', end:'HH:MM', recorder}]
+  getSleeps: function(){ return this._get('sleeps', []); },
+  setSleeps: function(a){ this._set('sleeps', a); },
+
+  // 生长记录 [{date, ageLabel, weight, height, headCirc}]
+  getGrowth: function(){ return this._get('growth', []); },
+  setGrowth: function(a){ this._set('growth', a); },
+
+  // 打卡记录 [{date:'YYYY-MM-DD', taskId, done:true}]
+  getChecks: function(){ return this._get('checks', []); },
+  setChecks: function(a){ this._set('checks', a); },
+
+  // 大小便记录 [{id, ts:ISO, type:'pee'|'poop', state:'正常/稀/干/绿/黑', note, recorder}]
+  getDiapers: function(){ return this._get('diapers', []); },
+  setDiapers: function(a){ this._set('diapers', a); },
+
+  // 维生素记录 [{id, ts:ISO, type:'vitAD'|'vitD3', note, recorder}]
+  getVits: function(){ return this._get('vits', []); },
+  setVits: function(a){ this._set('vits', a); },
+
+  // 里程碑 {id:{status:'pending'|'progress'|'achieved', date:''}}
+  getMilestones: function(){ return this._get('ms', {}); },
+  setMilestones: function(o){ this._set('ms', o); },
+
+  // 全量导出 / 导入
+  exportAll: function(){
+    return {
+      v: 3, exportDate: new Date().toISOString(),
+      baby: this.getBaby(), feeds: this.getFeeds(), sleeps: this.getSleeps(),
+      growth: this.getGrowth(), checks: this.getChecks(), ms: this.getMilestones(),
+      diapers: this.getDiapers(), vits: this.getVits()
+    };
+  },
+  importAll: function(data){
+    if(!data || typeof data !== 'object') return false;
+    if(data.baby) this.setBaby(data.baby);
+    if(Array.isArray(data.feeds)) this.setFeeds(data.feeds);
+    if(Array.isArray(data.sleeps)) this.setSleeps(data.sleeps);
+    if(Array.isArray(data.growth)) this.setGrowth(data.growth);
+    if(Array.isArray(data.checks)) this.setChecks(data.checks);
+    if(data.ms && typeof data.ms === 'object') this.setMilestones(data.ms);
+    if(Array.isArray(data.diapers)) this.setDiapers(data.diapers);
+    if(Array.isArray(data.vits)) this.setVits(data.vits);
+    return true;
+  },
+  clearAll: function(){
+    ['baby','feeds','sleeps','growth','checks','ms','diapers','vits'].forEach(function(k){ DB._del(k); });
+  }
+};
+
+/* =====================================================================
+ * 启蒙任务体系：按月龄自动切换
+ * ===================================================================== */
+var TASK_STAGES = [
+  { min:0, max:3, label:'0-3个月', tasks:[
+    {id:'a1', name:'黑白卡追视', cat:'视觉', dur:'2-3分钟'},
+    {id:'a2', name:'俯卧抬头练习', cat:'大运动', dur:'1-2分钟'},
+    {id:'a3', name:'抚触按摩', cat:'触觉', dur:'5-10分钟'},
+    {id:'a4', name:'听儿歌互动', cat:'听觉', dur:'5-10分钟'},
+    {id:'a5', name:'抓握反射练习', cat:'精细', dur:'2-3分钟'},
+    {id:'a6', name:'照镜子认识自己', cat:'社交', dur:'2-3分钟'}
+  ]},
+  { min:3, max:6, label:'3-6个月', tasks:[
+    {id:'b1', name:'彩色卡视觉训练', cat:'视觉', dur:'2-3分钟'},
+    {id:'b2', name:'俯卧抬头90°', cat:'大运动', dur:'3-5分钟'},
+    {id:'b3', name:'翻身练习', cat:'大运动', dur:'3-5分钟'},
+    {id:'b4', name:'抓握玩具练习', cat:'精细', dur:'5分钟'},
+    {id:'b5', name:'咿呀对话', cat:'语言', dur:'5分钟'},
+    {id:'b6', name:'抚触按摩', cat:'触觉', dur:'5-10分钟'}
+  ]},
+  { min:6, max:9, label:'6-9个月', tasks:[
+    {id:'c1', name:'独坐练习', cat:'大运动', dur:'5-10分钟'},
+    {id:'c2', name:'匍匐爬行', cat:'大运动', dur:'5-10分钟'},
+    {id:'c3', name:'双手传递玩具', cat:'精细', dur:'3-5分钟'},
+    {id:'c4', name:'撕纸游戏', cat:'精细', dur:'3-5分钟'},
+    {id:'c5', name:'躲猫猫', cat:'社交', dur:'3-5分钟'},
+    {id:'c6', name:'发音模仿', cat:'语言', dur:'5分钟'}
+  ]},
+  { min:9, max:12, label:'9-12个月', tasks:[
+    {id:'d1', name:'扶站练习', cat:'大运动', dur:'5-10分钟'},
+    {id:'d2', name:'爬行障碍赛', cat:'大运动', dur:'5-10分钟'},
+    {id:'d3', name:'拇食指捏取', cat:'精细', dur:'3-5分钟'},
+    {id:'d4', name:'拍手/再见手势', cat:'社交', dur:'3-5分钟'},
+    {id:'d5', name:'叫名字有反应', cat:'语言', dur:'3-5分钟'},
+    {id:'d6', name:'指认物品', cat:'认知', dur:'5分钟'}
+  ]},
+  { min:12, max:18, label:'1岁-1岁半', tasks:[
+    {id:'e1', name:'独立行走练习', cat:'大运动', dur:'10分钟'},
+    {id:'e2', name:'搭积木2-3块', cat:'精细', dur:'5分钟'},
+    {id:'e3', name:'翻书看图画', cat:'认知', dur:'5-10分钟'},
+    {id:'e4', name:'指认身体部位', cat:'认知', dur:'3-5分钟'},
+    {id:'e5', name:'学说简单词', cat:'语言', dur:'5分钟'},
+    {id:'e6', name:'用小勺吃饭', cat:'自理', dur:'10分钟'}
+  ]},
+  { min:18, max:36, label:'1岁半-3岁', tasks:[
+    {id:'f1', name:'跑跳练习', cat:'大运动', dur:'10-15分钟'},
+    {id:'f2', name:'串珠/穿绳', cat:'精细', dur:'5-10分钟'},
+    {id:'f3', name:'涂鸦画画', cat:'艺术', dur:'10分钟'},
+    {id:'f4', name:'说短句', cat:'语言', dur:'5-10分钟'},
+    {id:'f5', name:'上下楼梯', cat:'大运动', dur:'5分钟'},
+    {id:'f6', name:'自己穿脱衣物', cat:'自理', dur:'10分钟'}
+  ]}
+];
+
+var MS_STAGES = [
+  { min:0, max:3, label:'0-3个月', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m1', name:'俯卧抬头45°', range:'2-3月'},
+      {id:'m2', name:'头竖立稳', range:'3-4月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m3', name:'抓握反射', range:'0-3月'},
+      {id:'m4', name:'手可打开', range:'3-4月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m5', name:'发出喉音', range:'1-2月'},
+      {id:'m6', name:'逗笑出声', range:'3-4月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m7', name:'社交性微笑', range:'2-3月'},
+      {id:'m8', name:'追视人脸', range:'1-2月'}
+    ]}
+  ]},
+  { min:3, max:6, label:'3-6个月', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m9', name:'俯卧抬头90°', range:'3-4月'},
+      {id:'m10', name:'翻身（腹→背）', range:'4-5月'},
+      {id:'m11', name:'翻身（背→腹）', range:'5-6月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m12', name:'主动伸手抓握', range:'3-4月'},
+      {id:'m13', name:'双手传递物体', range:'5-6月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m14', name:'咿呀学语', range:'4-5月'},
+      {id:'m15', name:'转头寻找声源', range:'5-6月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m16', name:'对镜中影像笑', range:'4-5月'},
+      {id:'m17', name:'开始认生', range:'5-6月'}
+    ]}
+  ]},
+  { min:6, max:9, label:'6-9个月', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m18', name:'独坐稳', range:'6-8月'},
+      {id:'m19', name:'匍匐爬行', range:'7-8月'},
+      {id:'m20', name:'扶站片刻', range:'8-9月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m21', name:'摇动玩具', range:'6-7月'},
+      {id:'m22', name:'拇食指捏取', range:'8-9月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m23', name:'发baba/mama音', range:'7-8月'},
+      {id:'m24', name:'听懂"不"', range:'8-9月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m25', name:'玩躲猫猫', range:'7-8月'},
+      {id:'m26', name:'认生明显', range:'7-9月'}
+    ]}
+  ]},
+  { min:9, max:12, label:'9-12个月', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m27', name:'扶走', range:'9-11月'},
+      {id:'m28', name:'独站片刻', range:'10-12月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m29', name:'捏小物件', range:'9-10月'},
+      {id:'m30', name:'拍手', range:'9-12月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m31', name:'有意识叫爸妈', range:'10-12月'},
+      {id:'m32', name:'听懂指令', range:'10-12月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m33', name:'再见手势', range:'10-12月'},
+      {id:'m34', name:'指物表达需求', range:'10-12月'}
+    ]}
+  ]},
+  { min:12, max:18, label:'1岁-1岁半', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m35', name:'独走稳', range:'12-15月'},
+      {id:'m36', name:'蹲下捡物', range:'13-16月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m37', name:'搭2-3块积木', range:'12-15月'},
+      {id:'m38', name:'翻书页', range:'12-16月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m39', name:'说1-2个词', range:'12-15月'},
+      {id:'m40', name:'指认身体部位', range:'13-17月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m41', name:'模仿大人动作', range:'12-16月'},
+      {id:'m42', name:'用勺子进食', range:'13-17月'}
+    ]}
+  ]},
+  { min:18, max:36, label:'1岁半-3岁', cats:[
+    {key:'motor', label:'大运动', icon:'🏃', items:[
+      {id:'m43', name:'跑步', range:'18-24月'},
+      {id:'m44', name:'上楼梯', range:'20-26月'}
+    ]},
+    {key:'fine', label:'精细', icon:'✋', items:[
+      {id:'m45', name:'搭4块以上积木', range:'18-24月'},
+      {id:'m46', name:'串珠', range:'20-28月'}
+    ]},
+    {key:'lang', label:'语言', icon:'🗣', items:[
+      {id:'m47', name:'说短句', range:'20-26月'},
+      {id:'m48', name:'说出名字', range:'22-30月'}
+    ]},
+    {key:'social', label:'社交', icon:'😊', items:[
+      {id:'m49', name:'参与简单游戏', range:'18-24月'},
+      {id:'m50', name:'自己穿脱衣服', range:'24-36月'}
+    ]}
+  ]}
+];
+
+/* =====================================================================
+ * WHO 生长标准（0-24月，P3/P50/P97，月龄步进1）
+ * 参考：WHO Child Growth Standards
+ * ===================================================================== */
+var WHO = {
+  boy: {
+    weight:  { p3:[2.5,3.4,4.4,5.1,5.6,6.1,6.4,6.7,7.0,7.2,7.5,7.7,7.8,8.0,8.2,8.4,8.6,8.8,8.9,9.1,9.2,9.4,9.5,9.7,9.8], p50:[3.3,4.5,5.6,6.4,7.0,7.5,7.9,8.3,8.6,8.9,9.2,9.4,9.6,9.9,10.1,10.3,10.5,10.7,10.9,11.1,11.3,11.5,11.7,11.9,12.2], p97:[4.3,5.7,7.0,8.0,8.7,9.3,9.8,10.3,10.7,11.1,11.5,11.8,12.2,12.5,12.8,13.2,13.5,13.8,14.1,14.5,14.8,15.1,15.5,15.8,16.2] },
+    height:  { p3:[46.3,50.8,54.4,57.3,59.7,61.7,63.3,64.8,66.2,67.5,68.7,69.9,71.0,72.1,73.1,74.1,75.0,76.0,76.9,77.7,78.6,79.4,80.2,81.0,81.7], p50:[49.9,54.7,58.4,61.4,63.9,65.9,67.6,69.2,70.6,72.0,73.3,74.5,75.7,76.9,78.0,79.1,80.2,81.2,82.3,83.2,84.2,85.1,86.0,86.9,87.8], p97:[53.6,58.6,62.4,65.5,68.0,70.1,71.8,73.5,75.0,76.5,77.9,79.2,80.5,81.7,82.9,84.1,85.3,86.4,87.5,88.6,89.6,90.6,91.6,92.5,93.5] },
+    head:    { p3:[32.1,34.4,36.0,37.2,38.0,38.7,39.3,39.8,40.3,40.7,41.1,41.4,41.7,42.0,42.3,42.6,42.8,43.1,43.3,43.6,43.8,44.0,44.2,44.4,44.6], p50:[34.5,36.9,38.6,39.7,40.6,41.3,41.9,42.4,42.9,43.3,43.7,44.0,44.3,44.6,44.9,45.2,45.4,45.7,45.9,46.2,46.4,46.6,46.8,47.0,47.2], p97:[37.0,39.5,41.2,42.3,43.2,43.9,44.5,45.0,45.5,45.9,46.3,46.7,47.0,47.3,47.6,47.9,48.2,48.4,48.7,49.0,49.2,49.4,49.6,49.8,50.0] }
+  },
+  girl: {
+    weight:  { p3:[2.4,3.2,4.0,4.7,5.2,5.6,5.9,6.2,6.5,6.7,6.9,7.2,7.4,7.5,7.7,7.9,8.1,8.2,8.4,8.6,8.8,8.9,9.1,9.3,9.5], p50:[3.2,4.2,5.1,5.8,6.4,6.9,7.3,7.6,7.9,8.2,8.5,8.7,8.9,9.2,9.4,9.6,9.8,10.0,10.2,10.4,10.6,10.9,11.1,11.3,11.5], p97:[4.2,5.4,6.5,7.3,8.0,8.5,9.0,9.4,9.7,10.1,10.4,10.7,11.0,11.3,11.6,11.9,12.2,12.5,12.8,13.2,13.5,13.8,14.1,14.4,14.8] },
+    height:  { p3:[45.6,49.8,53.2,56.1,58.4,60.4,62.0,63.5,64.9,66.2,67.5,68.7,69.9,71.0,72.0,73.1,74.1,75.0,76.0,76.9,77.7,78.6,79.4,80.2,81.0], p50:[49.1,53.7,57.1,59.8,62.1,64.0,65.7,67.3,68.7,70.1,71.5,72.8,74.0,75.2,76.4,77.5,78.6,79.7,80.7,81.7,82.7,83.7,84.6,85.5,86.4], p97:[52.7,57.5,61.0,63.7,66.0,68.0,69.6,71.2,72.7,74.2,75.6,77.0,78.4,79.6,80.9,82.1,83.3,84.5,85.7,86.8,87.9,89.0,90.0,91.0,92.0] },
+    head:    { p3:[31.6,33.8,35.3,36.4,37.3,38.0,38.6,39.1,39.5,40.0,40.4,40.7,41.0,41.3,41.6,41.9,42.1,42.4,42.6,42.8,43.1,43.3,43.5,43.7,43.9], p50:[33.9,36.2,37.7,38.9,39.8,40.5,41.2,41.7,42.2,42.6,43.0,43.3,43.6,43.9,44.2,44.5,44.7,45.0,45.2,45.4,45.7,45.9,46.1,46.3,46.5], p97:[36.4,38.8,40.4,41.5,42.4,43.1,43.7,44.2,44.7,45.2,45.6,45.9,46.3,46.6,46.9,47.2,47.5,47.7,48.0,48.2,48.4,48.6,48.8,49.0,49.2] }
+  }
+};
+
+/* =====================================================================
+ * 工具函数
+ * ===================================================================== */
+function pad(n){ return (n<10?'0':'')+n; }
+function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function nowTime(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
+function monthDiff(d1, d2){
+  var m=(d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
+  if(d2.getDate() < d1.getDate()) m--;
+  return m;
+}
+function babyMonths(){
+  var b = DB.getBaby();
+  if(!b || !b.birthday) return 0;
+  return Math.max(0, monthDiff(new Date(b.birthday), new Date()));
+}
+function getStage(stages){
+  var m = babyMonths();
+  for(var i=0;i<stages.length;i++){
+    if(m >= stages[i].min && m < stages[i].max) return stages[i];
+  }
+  return stages[stages.length-1];
+}
+function hoursAgoText(ts){
+  var diff = Date.now() - new Date(ts).getTime();
+  if(diff < 60*1000) return '刚刚';
+  if(diff < 3600*1000) return Math.floor(diff/60000) + '分钟前';
+  return (diff/3600000).toFixed(1) + '小时前';
+}
+function durationText(min){
+  if(min < 60) return min+'分钟';
+  var h=Math.floor(min/60), m=min%60;
+  return m>0 ? h+'小时'+m+'分钟' : h+'小时';
+}
+function timeToMin(t){ if(!t || typeof t!=='string' || t.indexOf(':')<0) return 0; var p=t.split(':'); return parseInt(p[0])*60+parseInt(p[1]); }
+function minToTime(m){ m=((m%1440)+1440)%1440; return pad(Math.floor(m/60))+':'+pad(m%60); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function toast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(function(){ t.classList.remove('show'); }, 2200);
+}
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* =====================================================================
+ * 全局状态
+ * ===================================================================== */
+var state = {
+  tab: 'feed',
+  currentMetric: 'weight',
+  feedValue: 120,       // 瓶喂默认120ml
+  sleepMode: 'start',   // start|end
+  sleepTime: '21:00'
+};
+// 调试钩子：控制台可直接访问 state（对以后维护有用）
+window.__state = state;
+
+var METRIC_CFG = {
+  weight: { label:'体重', unit:'kg', step:0.1, def:6.0, color:'#4A9AE8' },
+  height: { label:'身高', unit:'cm', step:0.5, def:60, color:'#34B37E' },
+  headCirc:{ label:'头围', unit:'cm', step:0.1, def:39, color:'#F08BAE' }
+};
+var METRIC_KEY = { weight:'weight', height:'height', headCirc:'headCirc' };
+
+/* =====================================================================
+ * 初始化
+ * ===================================================================== */
+function initBaby(){
+  var b = DB.getBaby();
+  if(!b){
+    // 默认：3个月前出生
+    var d = new Date(); d.setDate(d.getDate()-92);
+    b = { name:'宝宝', birthday: dateStr(d), gender:'boy', recorder:'妈妈', members:['妈妈','奶奶'] };
+    DB.setBaby(b);
+  }
+  if(!b.members || !b.members.length){ b.members=['妈妈','奶奶']; DB.setBaby(b); }
+  if(!b.recorder){ b.recorder = b.members[0]; DB.setBaby(b); }
+  // 兼容旧版 v1 数据（wb_baby_ 前缀）
+  migrateV1();
+}
+
+/* 从旧版 v1 迁移数据（如果存在） */
+function migrateV1(){
+  if(DB._get('migrated_v1', false)) return;
+  var legacy = {
+    baby: (function(){ try{ return JSON.parse(localStorage.getItem('wb_baby_babyInfo')||'null'); }catch(e){ return null; } })(),
+    feeds: null, sleeps: null, growth: null, checks: null, ms: null
+  };
+  try{
+    var lTasks = JSON.parse(localStorage.getItem('wb_baby_tasks')||'null');
+    if(Array.isArray(lTasks) && lTasks.length){
+      // 旧任务打卡 → 新打卡
+      var checks = [];
+      lTasks.forEach(function(t){
+        if(t && t.date) checks.push({date:t.date, taskId:'b'+Math.floor(Math.random()*6+1), done:!!t.completed});
+      });
+      legacy.checks = checks;
+    }
+  }catch(e){}
+  try{
+    var lGrowth = JSON.parse(localStorage.getItem('wb_baby_growth')||'null');
+    if(Array.isArray(lGrowth) && lGrowth.length){
+      legacy.growth = lGrowth.map(function(g){ return {date:g.date, ageLabel:g.age||'', weight:g.weight||0, height:g.height||0, headCirc:g.headCirc||0}; });
+    }
+  }catch(e){}
+  try{
+    var lMs = JSON.parse(localStorage.getItem('wb_baby_milestones')||'null');
+    if(lMs && typeof lMs==='object') legacy.ms = lMs;
+  }catch(e){}
+  var imported = false;
+  if(legacy.baby && legacy.baby.birthday){
+    var cur = DB.getBaby();
+    cur.birthday = legacy.baby.birthday;
+    if(legacy.baby.name) cur.name = legacy.baby.name;
+    DB.setBaby(cur);
+    imported = true;
+  }
+  if(legacy.growth){ DB.setGrowth(legacy.growth); imported = true; }
+  if(legacy.checks){ DB.setChecks(legacy.checks); imported = true; }
+  if(legacy.ms){ DB.setMilestones(legacy.ms); imported = true; }
+  if(imported) toast('已从旧版导入数据');
+  DB._set('migrated_v1', true);
+}
+
+/* =====================================================================
+ * Tab 切换
+ * ===================================================================== */
+window.switchTab = function(tab){
+  state.tab = tab;
+  var panels = {feed:'panel-feed', sleep:'panel-sleep', growth:'panel-growth', play:'panel-play', stats:'panel-stats'};
+  var navs = document.querySelectorAll('.nav-item');
+  var tabs = ['feed','sleep','growth','play','stats'];
+  for(var i=0;i<tabs.length;i++){
+    document.getElementById(panels[tabs[i]]).classList.toggle('active', tabs[i]===tab);
+    navs[i].classList.toggle('active', tabs[i]===tab);
+  }
+  if(tab==='feed') renderFeed();
+  if(tab==='sleep') renderSleep();
+  if(tab==='growth'){ renderGrowthChart(); renderGrowthList(); }
+  if(tab==='play'){ renderTasks(); renderMilestones(); }
+  if(tab==='stats'){ renderStats(); }
+  window.scrollTo(0,0);
+};
+
+/* =====================================================================
+ * 记录人
+ * ===================================================================== */
+window.cycleRecorder = function(){
+  var b = DB.getBaby();
+  var members = b.members || ['妈妈','奶奶'];
+  var idx = members.indexOf(b.recorder);
+  b.recorder = members[(idx+1) % members.length];
+  DB.setBaby(b);
+  updateHeader();
+  toast('当前记录人：' + b.recorder);
+};
+
+function renderMembers(){
+  var b = DB.getBaby();
+  var list = document.getElementById('memberList');
+  var html = '';
+  (b.members||[]).forEach(function(m){
+    html += '<span class="member-chip'+(m===b.recorder?' current':'')+'" onclick="setRecorder(\''+esc(m)+'\')">'+
+      (m==='妈妈'?'👩':m==='奶奶'?'👵':m==='爸爸'?'👨':'👤')+' '+esc(m)+
+      ((b.members.length>1)?'<button class="rm" onclick="event.stopPropagation();removeMember(\''+esc(m)+'\')">✕</button>':'')+
+      '</span>';
+  });
+  list.innerHTML = html;
+  document.getElementById('setCurrentRec').textContent = b.recorder;
+}
+window.setRecorder = function(name){
+  var b = DB.getBaby(); b.recorder = name; DB.setBaby(b); renderMembers(); updateHeader(); toast('当前记录人：'+name);
+};
+window.addMember = function(){
+  var inp = document.getElementById('newMemberName');
+  var name = inp.value.trim();
+  if(!name){ toast('请输入成员名字'); return; }
+  var b = DB.getBaby();
+  if((b.members||[]).indexOf(name) >= 0){ toast('成员已存在'); return; }
+  b.members.push(name); DB.setBaby(b);
+  inp.value=''; renderMembers(); toast('已添加成员：'+name);
+};
+window.removeMember = function(name){
+  var b = DB.getBaby();
+  b.members = (b.members||[]).filter(function(m){ return m!==name; });
+  if(b.recorder === name) b.recorder = b.members[0];
+  DB.setBaby(b); renderMembers(); updateHeader();
+};
+
+/* =====================================================================
+ * Header
+ * ===================================================================== */
+function updateHeader(){
+  var b = DB.getBaby();
+  document.getElementById('babyName').textContent = b.name || '宝宝';
+  var m = babyMonths();
+  document.getElementById('babyAge').textContent = (m<1 ? '不满1个月' : m+'个月');
+  var stage = getStage(TASK_STAGES);
+  document.getElementById('babyStageLabel').textContent = '启蒙阶段：'+stage.label;
+  var rec = document.getElementById('recorderChip');
+  rec.innerHTML = (b.recorder==='妈妈'?'👩':b.recorder==='奶奶'?'👵':b.recorder==='爸爸'?'👨':'👤')+' '+esc(b.recorder);
+  document.getElementById('babyAvatar').textContent = b.gender==='girl' ? '👧' : '👶';
+}
+
+/* =====================================================================
+ * 喂奶模块
+ * ===================================================================== */
+window.openFeedSheet = function(type){
+  state.feedType = 'bottle';
+  var feeds = DB.getFeeds();
+  // 取最近一次瓶喂的奶量作为默认
+  var last = null;
+  for(var i=feeds.length-1;i>=0;i--){ if(feeds[i].type==='bottle'){ last=feeds[i]; break; } }
+  var hint = document.getElementById('bottleHint');
+  state.feedValue = last && last.value ? last.value : 120;
+  document.getElementById('feedNote').value = '';
+  renderFeedStepper();
+  openSheet('feedSheet');
+};
+window.setFeedSide = function(side){ state.feedSide = side; };  // 保留兼容（无UI调用）
+function renderFeedStepper(){
+  var step = 10;
+  var v = state.feedValue;
+  var el = document.getElementById('feedStepper');
+  el.innerHTML =
+    '<button onclick="feedStep(-10)">−</button>' +
+    '<div class="val">' + v + '<span class="unit">ml</span></div>' +
+    '<button onclick="feedStep(10)">＋</button>';
+}
+window.feedStep = function(delta){
+  state.feedValue = Math.max(10, state.feedValue + delta);
+  renderFeedStepper();
+};
+window.saveFeedRecord = function(){
+  var b = DB.getBaby();
+  var rec = {
+    id: uid(),
+    ts: new Date().toISOString(),
+    type: 'bottle',
+    side: '',
+    value: state.feedValue,
+    unit: 'ml',
+    note: document.getElementById('feedNote').value.trim(),
+    recorder: b.recorder || '妈妈'
+  };
+  var feeds = DB.getFeeds();
+  feeds.push(rec);
+  DB.setFeeds(feeds);
+  closeSheet('feedSheet');
+  renderFeed();
+  toast('🍼 瓶喂 ' + state.feedValue + 'ml 已记录');
+};
+window.delFeed = function(id){
+  var feeds = DB.getFeeds().filter(function(f){ return f.id!==id; });
+  DB.setFeeds(feeds);
+  renderFeed();
+  toast('已删除');
+};
+
+// C1 快捷量：一键记录指定奶量（无需开面板）
+window.quickFeed = function(ml){
+  var b = DB.getBaby();
+  var rec = {
+    id: uid(),
+    ts: new Date().toISOString(),
+    type: 'bottle',
+    side: '',
+    value: ml,
+    unit: 'ml',
+    note: '',
+    recorder: b.recorder || '妈妈'
+  };
+  var feeds = DB.getFeeds();
+  feeds.push(rec);
+  DB.setFeeds(feeds);
+  renderFeed();
+  toast('🍼 已记录 ' + ml + 'ml');
+};
+
+/* =====================================================================
+ * 大小便记录（🚼）
+ * ===================================================================== */
+var diaperState = { type:'pee', time:'', poopState:'正常' };
+
+window.openDiaperSheet = function(type){
+  diaperState.type = type;
+  diaperState.time = nowTime();
+  diaperState.poopState = '正常';
+  document.getElementById('diaperSheetTitle').textContent = type==='pee' ? '💧 记录小便' : '💩 记录大便';
+  document.getElementById('diaperTimeVal').textContent = diaperState.time;
+  var inp = document.getElementById('diaperTimeInput');
+  if(inp){ inp.value = diaperState.time; inp.style.display = ''; }
+  // 大便显示性状选择
+  document.getElementById('poopStateRow').style.display = type==='poop' ? 'flex' : 'none';
+  renderPoopStateBtns();
+  document.getElementById('diaperNote').value = '';
+  document.getElementById('diaperSheet').classList.add('show');
+};
+function renderPoopStateBtns(){
+  var btns = document.querySelectorAll('.poop-state-btn');
+  for(var i=0;i<btns.length;i++){
+    btns[i].classList.toggle('active', btns[i].getAttribute('data-state')===diaperState.poopState);
+  }
+}
+window.setPoopState = function(s){
+  diaperState.poopState = s;
+  renderPoopStateBtns();
+};
+window.diaperTimeShift = function(delta){
+  diaperState.time = minToTime(timeToMin(diaperState.time) + delta);
+  document.getElementById('diaperTimeVal').textContent = diaperState.time;
+  var inp = document.getElementById('diaperTimeInput');
+  if(inp) inp.value = diaperState.time;
+};
+window.syncDiaperTimeFromInput = function(){
+  var inp = document.getElementById('diaperTimeInput');
+  if(inp && inp.value){
+    diaperState.time = inp.value;
+    document.getElementById('diaperTimeVal').textContent = diaperState.time;
+  }
+};
+window.saveDiaperRecord = function(){
+  var b = DB.getBaby();
+  var now = new Date();
+  var d = new Date();
+  var parts = diaperState.time.split(':');
+  d.setHours(parseInt(parts[0],10), parseInt(parts[1],10), 0, 0);
+  var rec = {
+    id: uid(),
+    ts: d.toISOString(),
+    type: diaperState.type,
+    state: diaperState.type==='poop' ? diaperState.poopState : '',
+    note: document.getElementById('diaperNote').value.trim(),
+    recorder: b.recorder || '妈妈'
+  };
+  var diapers = DB.getDiapers();
+  diapers.push(rec);
+  DB.setDiapers(diapers);
+  document.getElementById('diaperSheet').classList.remove('show');
+  renderDiapers();
+  toast((diaperState.type==='pee'?'💧 小便':'💩 大便') + ' ' + diaperState.time + ' 已记录');
+};
+window.delDiaper = function(id){
+  DB.setDiapers(DB.getDiapers().filter(function(x){ return x.id!==id; }));
+  renderDiapers();
+  toast('已删除');
+};
+window.closeDiaperSheet = function(){
+  document.getElementById('diaperSheet').classList.remove('show');
+};
+
+function renderDiapers(){
+  var diapers = DB.getDiapers();
+  var td = todayStr();
+  var today = diapers.filter(function(x){ return dateStr(new Date(x.ts))===td; })
+    .sort(function(a,b){ return a.ts<b.ts?-1:1; });
+  var list = document.getElementById('diaperList');
+  if(!today.length){
+    list.innerHTML = '<div class="feed-empty">今天还没有大小便记录<br>点上方按钮记录</div>';
+    return;
+  }
+  var html = '';
+  today.forEach(function(x){
+    var icon = x.type==='pee' ? '💧' : '💩';
+    var stateTxt = (x.type==='poop' && x.state) ? ' · ' + esc(x.state) : '';
+    var note = x.note ? ' · ' + esc(x.note) : '';
+    html += '<div class="feed-item">'+
+      '<div class="f-time">'+pad(new Date(x.ts).getHours())+':'+pad(new Date(x.ts).getMinutes())+'</div>'+
+      '<div class="f-icon">'+icon+'</div>'+
+      '<div class="f-body"><div class="f-title">'+(x.type==='pee'?'小便':'大便')+stateTxt+'</div>'+
+      '<div class="f-desc">'+hoursAgoText(x.ts)+note+'</div></div>'+
+      '<span class="f-rec">'+esc(x.recorder)+'</span>'+
+      '<button class="f-del" onclick="delDiaper(\''+x.id+'\')">🗑</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* =====================================================================
+ * 维生素记录（💊 AD / D3）
+ * ===================================================================== */
+window.addVitRecord = function(type){
+  var b = DB.getBaby();
+  var rec = {
+    id: uid(),
+    ts: new Date().toISOString(),
+    type: type,
+    note: '',
+    recorder: b.recorder || '妈妈'
+  };
+  var vits = DB.getVits();
+  vits.push(rec);
+  DB.setVits(vits);
+  renderVits();
+  toast((type==='vitAD'?'💊 维生素AD':'☀️ 维生素D3') + ' 已记录');
+};
+window.delVit = function(id){
+  DB.setVits(DB.getVits().filter(function(x){ return x.id!==id; }));
+  renderVits();
+  toast('已删除');
+};
+
+function renderVits(){
+  var vits = DB.getVits();
+  var td = todayStr();
+  var today = vits.filter(function(x){ return dateStr(new Date(x.ts))===td; })
+    .sort(function(a,b){ return a.ts<b.ts?-1:1; });
+  var list = document.getElementById('vitList');
+  if(!today.length){
+    list.innerHTML = '<div class="feed-empty">今天还没有维生素记录<br>点上方按钮记录</div>';
+    return;
+  }
+  var html = '';
+  today.forEach(function(x){
+    var label = x.type==='vitAD' ? '💊 维生素AD' : '☀️ 维生素D3';
+    html += '<div class="feed-item">'+
+      '<div class="f-time">'+pad(new Date(x.ts).getHours())+':'+pad(new Date(x.ts).getMinutes())+'</div>'+
+      '<div class="f-icon">💊</div>'+
+      '<div class="f-body"><div class="f-title">'+label+'</div>'+
+      '<div class="f-desc">'+hoursAgoText(x.ts)+'</div></div>'+
+      '<span class="f-rec">'+esc(x.recorder)+'</span>'+
+      '<button class="f-del" onclick="delVit(\''+x.id+'\')">🗑</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* =====================================================================
+ * 语音记录模块（🎤）
+ * ===================================================================== */
+var voiceState = {
+  supported: !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+  listening: false,
+  rec: null,
+  rawText: '',
+  parsed: null,   // {time:'12:30', value:150, note:'...'} 或 {sleepStart, sleepEnd, ...}
+  mode: 'feed'    // 'feed' | 'sleep'
+};
+
+// 中文数字 → 阿拉伯数字（支持 零一二三四五六七八九十百千万、以及"十二点半"这类）
+function cnNumToInt(s){
+  if(!s) return null;
+  s = s.replace(/[，,、。\s]/g,'');
+  if(/^\d+$/.test(s)) return parseInt(s,10);
+  var digits = {'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  var units = {'十':10,'百':100,'千':1000};
+  var total = 0, current = 0, found = false;
+  for(var i=0;i<s.length;i++){
+    var ch = s[i];
+    if(digits[ch]!==undefined){ current = digits[ch]; found = true; }
+    else if(units[ch]!==undefined){
+      if(current===0) current = 1;  // "十" = 10, "十五" = 15
+      total += current * units[ch];
+      current = 0; found = true;
+    }
+    else if(ch==='万'){ total = (total+current)*10000; current=0; found=true; }
+    else return null;  // 遇到其他字符就放弃
+  }
+  total += current;
+  return found ? total : null;
+}
+
+// 从句子中提取时间，返回 'HH:MM' 或 null
+// 支持：12点半 / 12点15 / 十二点半 / 一点 / 14:30 / 凌晨2点 / 下午三点半
+function extractTime(text){
+  var t = text;
+  // 数字时钟格式 14:30 或 14.30（排除 ml 前的数字，如 130ml）
+  var mClock = t.match(/(^|[^\d])(\d{1,2})[:：.](\d{1,2})(?!\s*(?:ml|ML|mL|毫升))/);
+  if(mClock){
+    var hh = parseInt(mClock[2],10), mm = parseInt(mClock[3],10);
+    if(hh>=0&&hh<=23&&mm>=0&&mm<=59) return pad(hh)+':'+pad(mm);
+  }
+  // 中文/数字 + 点/时/点钟 + 半/刻/数字（用字面量边界，避免匹配到奶量数字）
+  var mCn = t.match(/(?:凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜)?\s*([零一二两三四五六七八九十\d]{1,3})\s*(?:点|时|点钟)\s*([半\d零一二两三四五六七八九十]*)/);
+  if(mCn){
+    var h = cnNumToInt(mCn[1]);
+    if(h===null||h<0||h>23) return null;
+    var mm = 0;
+    var rest = mCn[2];
+    if(rest==='半') mm = 30;
+    else if(rest) {
+      var v = cnNumToInt(rest);
+      if(v!==null && v>=0 && v<60) mm = v;
+      else return null;
+    }else{
+      // "X点"后面没跟分钟数：h===1 且无时段词时，"一点"更可能是量词（如"吐了一点"），排除
+      var full = mCn[0];
+      var hasPeriod = /凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜/.test(full);
+      if(h===1 && !hasPeriod) return null;
+    }
+    // 处理凌晨/下午等时段词
+    var full = mCn[0];
+    if(/下午|晚上|傍晚|夜里|夜间/.test(full) && h<12) h += 12;
+    else if(/凌晨|清晨|早晨|早上/.test(full) && h===12) h = 0;
+    return pad(h)+':'+pad(mm);
+  }
+  return null;
+}
+
+// 从句子中提取奶量（ml），支持 150 / 150毫升 / 一百五十 / 九十 / 120ml
+function extractAmount(text){
+  var t = text;
+  // 数字+单位：150毫升 / 120ml / 100毫升
+  var mUnit = t.match(/(\d+(?:\.\d+)?)\s*(?:毫升|ml|ML|mL)/);
+  if(mUnit) return Math.round(parseFloat(mUnit[1]));
+  // 中文数字+毫升
+  var mCn = t.match(/([零一二两三四五六七八九十百\d]+)\s*(?:毫升|ml|ML|mL)/);
+  if(mCn){
+    var v = cnNumToInt(mCn[1]);
+    if(v!==null) return v;
+  }
+  // 裸数字（无单位）：取句中最大的合理数字作为奶量
+  var nums = t.match(/\d+/g);
+  if(nums){
+    var best = null;
+    nums.forEach(function(n){ n=parseInt(n,10); if(n>=10 && n<=500 && (best===null||n>best)) best=n; });
+    if(best!==null) return best;
+  }
+  // 纯中文数字（如"一百五十"、"九十"）——排除时间短语里的数字
+  var mPure = t.replace(/(?:凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜)?[零一二两三四五六七八九十\d]{1,3}\s*(?:点|时|点钟)\s*(?:半|[零一二两三四五六七八九十\d]*)/g,' ')
+                .match(/([零一二两三四五六七八九十百]+)/g);
+  if(mPure){
+    for(var i=0;i<mPure.length;i++){
+      var v2 = cnNumToInt(mPure[i]);
+      if(v2!==null && v2>=10 && v2<=500) return v2;
+    }
+  }
+  return null;
+}
+
+// 从句子中提取睡眠起止时间
+// 支持：昨晚九点半睡，早上六点起 / 十点睡六点起 / 九点睡的 / 六点醒的
+// 返回 {sleepStart:'21:30', sleepEnd:'06:30', startYesterday:bool} 或 null
+function extractSleep(text){
+  var t = text;
+  var hasSleepWord = /睡|眠/.test(t);
+  var hasWakeWord = /起|醒/.test(t);
+  if(!hasSleepWord && !hasWakeWord) return null;
+
+  // "睡/眠"和"起/醒"的位置（取最后一个，避免"睡得很好"这类描述词干扰）
+  var sleepIdx = hasSleepWord ? t.lastIndexOf('睡') : -1;
+  if(hasSleepWord && sleepIdx<0){ var si = t.lastIndexOf('眠'); if(si>=0) sleepIdx = si; }
+  var wakeIdx = hasWakeWord ? t.lastIndexOf('起') : -1;
+  if(hasWakeWord && wakeIdx<0){ var wi = t.lastIndexOf('醒'); if(wi>=0) wakeIdx = wi; }
+
+  // 收集所有时间短语（含位置）
+  var allTimes = [];
+  var re = /(?:凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜|昨晚|昨天晚上|昨夜|今天|今天晚上)?\s*([零一二两三四五六七八九十\d]{1,3})\s*(?:点|时|点钟)\s*([半\d零一二两三四五六七八九十]*)/g;
+  var m;
+  while((m = re.exec(t)) !== null){
+    allTimes.push({idx: m.index, full: m[0], hRaw: m[1], rest: m[2]});
+  }
+  if(!allTimes.length) return null;
+
+  var result = {sleepStart:null, sleepEnd:null, startYesterday:false};
+
+  // 逐个时间：解析出 HH:MM，然后按"离哪个关键词近"决定归属
+  for(var i=0;i<allTimes.length;i++){
+    var tm = allTimes[i];
+    var h = cnNumToInt(tm.hRaw);
+    if(h===null||h<0||h>23) continue;
+    var mm = 0;
+    var rest = tm.rest;
+    if(rest==='半') mm = 30;
+    else if(rest){
+      var v = cnNumToInt(rest);
+      if(v===null||v>=60) continue;
+      mm = v;
+    }else{
+      // "X点"没分钟数：h===1且无时段词时排除（"一点"量词歧义）
+      var hasPeriod = /凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜|昨晚|昨天晚上|昨夜|今天/.test(tm.full);
+      if(h===1 && !hasPeriod) continue;
+    }
+    // 时段词 → 12小时制转换
+    if(/下午|晚上|傍晚|夜里|夜间|昨晚|昨天晚上|昨夜/.test(tm.full) && h<12) h += 12;
+    else if(/凌晨|清晨|早晨|早上/.test(tm.full) && h===12) h = 0;
+    else if(/晚上|昨晚|昨天晚上|昨夜/.test(tm.full) && h===12) h = 0;  // 晚上/昨晚十二点=凌晨0点
+    // 今天早上/今天上午 → 早上
+    else if(/今天/.test(tm.full) && /早上|上午/.test(tm.full) && h===12) h = 0;
+    // 无时段词的入睡时间在 6-11 点之间 → 视为晚上（"十点睡"→22:00；"昨晚...九点睡"→21:00）
+    else if(h>=6 && h<12 && hasSleepWord && tm.idx < (sleepIdx>=0?sleepIdx:999) && !/早上|上午/.test(tm.full)) h += 12;
+    var hhmm = pad(h)+':'+pad(mm);
+
+    // 归属：入睡时间在"睡"字之前；起床时间在"起/醒"字之前
+    // 优先级：先看是否在"起/醒"前且远离"睡"；再看是否在"睡"前
+    var before = t.slice(0, tm.idx);
+    var after = t.slice(tm.idx + tm.full.length);
+    var isStart = false, isEnd = false;
+    if(wakeIdx >= 0 && tm.idx < wakeIdx && !/睡|眠/.test(before)){
+      // 在"起/醒"之前且前面没有"睡" → 起床时间
+      // 但要排除"睡"字在时间之后的情况（如"九点睡七点起"中"七点"在"睡"后"起"前）
+      if(sleepIdx >= 0 && tm.idx > sleepIdx){
+        isEnd = true;   // 在睡之后、起之前 → 起床
+      }else if(sleepIdx < 0){
+        isEnd = true;   // 没有"睡"字 → 起床
+      }
+    }
+    if(sleepIdx >= 0 && tm.idx < sleepIdx){
+      isStart = true;   // 在"睡"字之前 → 入睡
+    }
+    // "睡到X点"结构：时间在"到"之后且在"睡"之后 → 起床
+    if(sleepIdx >= 0 && tm.idx > sleepIdx && /到|至/.test(before) && !isStart && !isEnd){
+      isEnd = true;
+    }
+    // 最后兜底：两个时间，第一个入睡、第二个起床
+    if(!isStart && !isEnd){
+      if(!result.sleepStart) isStart = true;
+      else isEnd = true;
+    }
+
+    if(isStart){
+      if(!result.sleepStart){
+        result.sleepStart = hhmm;
+        var prefix2 = t.slice(0, tm.idx);
+        if(/昨晚|昨天/.test(tm.full) || /昨晚|昨天/.test(prefix2)) result.startYesterday = true;
+      }
+    }else if(isEnd){
+      if(!result.sleepEnd) result.sleepEnd = hhmm;
+    }
+  }
+
+  // 兜底：只有起床时间
+  if(!result.sleepStart && !result.sleepEnd) return null;
+  return result;
+}
+
+// 从句子中提取生长数据（体重/身高/头围，单位kg/cm/公斤/厘米）
+// 支持：体重6.5公斤，身高61厘米，头围39.5 / 6.5kg 61cm 39.5 / 三个月 6.5公斤
+// 返回 {weight, height, headCirc, ageLabel} 或 null
+function extractGrowth(text){
+  var t = text;
+  // 没有生长关键词和数字单位 → 不识别
+  var hasKw = /体重|身高|头围|公斤|千克|kg|KG|厘米|cm|CM/.test(t);
+  if(!hasKw) return null;
+  var result = {weight:null, height:null, headCirc:null, ageLabel:''};
+
+  // 体重：数字+公斤/千克/kg，或"体重X"
+  var mW = t.match(/(\d+(?:\.\d+)?)\s*(?:公斤|千克|kg|KG)/);
+  if(mW){ result.weight = parseFloat(mW[1]); }
+  else{
+    var mW2 = t.match(/体重\s*[:：]?\s*([零一二两三四五六七八九十\d.]+)/);
+    if(mW2){
+      var v1 = parseFloat(mW2[1]);
+      if(isNaN(v1)){ var vc = cnNumToInt(mW2[1]); v1 = vc!==null?vc:NaN; }
+      if(!isNaN(v1)) result.weight = v1;
+    }
+  }
+  // 身高：数字+厘米/cm，或"身高X"
+  var mH = t.match(/(\d+(?:\.\d+)?)\s*(?:厘米|cm|CM)/);
+  if(mH){ result.height = parseFloat(mH[1]); }
+  else{
+    var mH2 = t.match(/身高\s*[:：]?\s*([零一二两三四五六七八九十\d.]+)/);
+    if(mH2){
+      var v2 = parseFloat(mH2[1]);
+      if(isNaN(v2)){ var vc2 = cnNumToInt(mH2[1]); v2 = vc2!==null?vc2:NaN; }
+      if(!isNaN(v2)) result.height = v2;
+    }
+  }
+  // 头围：数字+厘米/cm（跟在"头围"后），或"头围X"
+  var mC = t.match(/头围\s*[:：]?\s*([零一二两三四五六七八九十\d.]+)/);
+  if(mC){
+    var v3 = parseFloat(mC[1]);
+    if(isNaN(v3)){ var vc3 = cnNumToInt(mC[1]); v3 = vc3!==null?vc3:NaN; }
+    if(!isNaN(v3)) result.headCirc = v3;
+  }
+  // 兜底：有数字+单位但没标签 → 顺序分配（公斤→体重，厘米→身高，多余厘米→头围）
+  var kgs = t.match(/(\d+(?:\.\d+)?)\s*(?:公斤|千克|kg|KG)/g);
+  var cms = t.match(/(\d+(?:\.\d+)?)\s*(?:厘米|cm|CM)/g);
+  if(result.weight===null && kgs && kgs.length){ result.weight = parseFloat(kgs[0]); }
+  if(result.height===null && cms && cms.length){ result.height = parseFloat(cms[0]); }
+  if(result.headCirc===null && cms && cms.length>=2){ result.headCirc = parseFloat(cms[1]); }
+  // 月龄（如"三个月""6个月"）
+  var mA = t.match(/([零一二两三四五六七八九十\d]+)\s*个月/);
+  if(mA){
+    var ag = cnNumToInt(mA[1]);
+    if(ag!==null) result.ageLabel = ag + '个月';
+  }
+  // 至少有一项才算识别成功
+  if(result.weight===null && result.height===null && result.headCirc===null) return null;
+  return result;
+}
+
+// 解析语音文本 → 返回带 type 的结果
+// type: 'feed' | 'sleep' | 'growth' | 'checkin' | 'milestone' | 'recorder' | 'mixed' | 'diaper' | 'vit'
+function parseVoice(text){
+  var t = text;
+  // 大小便："换了尿布"/"尿了"/"小便了"/"拉臭臭了"/"大便了"
+  if(/尿布|换了尿|小便|尿了|尿尿/.test(t) && !/大便|拉|臭臭|便便/.test(t)){
+    return { type:'diaper', sub:'pee' };
+  }
+  if(/大便|拉臭臭|拉粑粑|便便|拉屎|拉稀|臭臭/.test(t)){
+    return { type:'diaper', sub:'poop' };
+  }
+  // 维生素："吃了AD"/"喂了维生素AD"/"吃了D3"
+  if(/维生素AD|维AD|吃了AD|喂了AD|AD了|维生素a|维生素A/.test(t)){
+    return { type:'vit', sub:'vitAD' };
+  }
+  if(/维生素D3|维D3|吃了D3|喂了D3|D3了|维生素d3/.test(t)){
+    return { type:'vit', sub:'vitD3' };
+  }
+  // A3 记录人："这次奶奶记的" / "妈妈记录"
+  var mRec = t.match(/(?:这次|今天|刚才|以后)?\s*(奶奶|妈妈|爸爸|爷爷|外公|外婆|姥姥|姥爷|哥哥|姐姐)\s*(?:记的|记录|记|来记)/);
+  if(mRec){
+    return { type:'recorder', recorder: mRec[1] };
+  }
+  // A2 里程碑："宝宝会翻身了" / "会翻身了" / "会爬了"
+  // 用里程碑名的核心词匹配（"翻身（腹→背）"→"翻身"）
+  var stage = getStage(MS_STAGES);
+  var matchedMs = null;
+  var msKeys = [];
+  stage.cats.forEach(function(cat){
+    cat.items.forEach(function(item){
+      var key = item.name.replace(/（.*?）/g,'').replace(/[（()）]/g,'').replace(/了$/,'');
+      msKeys.push({item:item, key:key});
+    });
+  });
+  // 按关键词长度排序（长的优先，避免"翻身"匹配到"翻身"相关的其他项）
+  msKeys.sort(function(a,b){ return b.key.length - a.key.length; });
+  for(var mi=0; mi<msKeys.length; mi++){
+    if(t.indexOf(msKeys[mi].key) >= 0 && /会|能|可以|开始|已经|会了/.test(t)){
+      matchedMs = msKeys[mi].item;
+      break;
+    }
+  }
+  if(matchedMs){
+    return { type:'milestone', msId: matchedMs.id, msName: matchedMs.name };
+  }
+  // A1 启蒙打卡：说任务名 → 打卡；"都完成了/都做完了" → 全部打卡
+  var mAll = t.match(/都\s*(?:完成|做完|做了|打卡)|全部\s*(?:完成|做完|做了|打卡)/);
+  if(mAll){
+    return { type:'checkin', all:true };
+  }
+  var stage2 = getStage(TASK_STAGES);
+  var matchedTask = null;
+  var taskKeys = [];
+  stage2.tasks.forEach(function(tk){
+    // 生成多个候选关键词：完整名去数字、去"视觉/听觉"等修饰词后的核心词
+    var name = tk.name.replace(/[0-9°]/g,'');
+    var keys = [];
+    keys.push(name);                                    // 完整名："彩色卡视觉训练"
+    keys.push(name.replace(/视觉|听觉|触觉|大运动|精细动作/g,''));  // "彩色卡训练"
+    keys.push(name.replace(/练习|训练|互动|游戏|活动/g,''));        // "彩色卡视觉"
+    keys.push(name.replace(/视觉|听觉|触觉|大运动|精细动作|练习|训练|互动|游戏|活动/g,'')); // "彩色卡"
+    keys.forEach(function(k){
+      k = k.trim();
+      if(k && taskKeys.indexOf(k) < 0) taskKeys.push(k);
+    });
+  });
+  // 按关键词长度排序（长的优先）
+  taskKeys.sort(function(a,b){ return b.length - a.length; });
+  for(var ti=0; ti<taskKeys.length; ti++){
+    if(t.indexOf(taskKeys[ti]) >= 0){
+      // 反查是哪项任务
+      for(var tj=0; tj<stage2.tasks.length; tj++){
+        var nm = stage2.tasks[tj].name.replace(/[0-9°]/g,'');
+        var cands = [nm, nm.replace(/视觉|听觉|触觉|大运动|精细动作/g,''), nm.replace(/练习|训练|互动|游戏|活动/g,''), nm.replace(/视觉|听觉|触觉|大运动|精细动作|练习|训练|互动|游戏|活动/g,'')];
+        if(cands.indexOf(taskKeys[ti]) >= 0){ matchedTask = stage2.tasks[tj]; break; }
+      }
+      if(matchedTask) break;
+    }
+  }
+  if(matchedTask){
+    return { type:'checkin', taskId: matchedTask.id, taskName: matchedTask.name };
+  }
+  // A4 混合："两点吃奶150，然后睡到四点" / "先吃奶再睡觉"
+  var hasFeedWord = /吃奶|喂奶|喝奶|喝了|吃了/.test(t);
+  var hasSleepWord2 = /睡|眠|起|醒/.test(t);
+  if(hasFeedWord && hasSleepWord2 && /然后|接着|之后|后来|再|先.*后/.test(t)){
+    var sleepRes = extractSleep(t);
+    var feedTime = extractTime(t);
+    var feedAmount = extractAmount(t);
+    if(sleepRes && (feedAmount || feedTime)){
+      // 混合场景优化：入睡时间若与喂奶时间相同 → 视为未识别（"两点吃奶150，然后睡到四点"）
+      if(sleepRes.sleepStart && feedTime && sleepRes.sleepStart === feedTime){
+        sleepRes.sleepStart = null;
+      }
+      return { type:'mixed', sleep: sleepRes, feedTime: feedTime, feedValue: feedAmount };
+    }
+  }
+  // 先尝试睡眠解析
+  var sleep = extractSleep(t);
+  if(sleep) return { type:'sleep', sleepStart:sleep.sleepStart, sleepEnd:sleep.sleepEnd, startYesterday:sleep.startYesterday };
+  // 再尝试生长解析
+  var growth = extractGrowth(t);
+  if(growth) return { type:'growth', weight:growth.weight, height:growth.height, headCirc:growth.headCirc, ageLabel:growth.ageLabel };
+  // 否则按喂奶解析
+  var time = extractTime(t);
+  var amount = extractAmount(t);
+  var note = text;
+  // 1. 去掉时间短语（含时段词）
+  note = note.replace(/(?:凌晨|清晨|早晨|早上|上午|中午|下午|晚上|傍晚|夜里|夜间|半夜)?[零一二两三四五六七八九十\d]{1,3}\s*(?:点|时|点钟)\s*(?:半|[零一二两三四五六七八九十\d]*)/g,' ');
+  // 2. 去掉时钟格式（如 14:30）
+  note = note.replace(/(^|[^\d])\d{1,2}[:：.]\d{1,2}/g,'$1');
+  // 3. 去掉动作词（吃奶/喝了/吃了/喂奶等）——先删，让中文数字暴露在空格边
+  note = note.replace(/吃奶|喂奶|喝了|吃了|喝奶|喝|吃|喂/g,' ');
+  // 3.5 去掉"了/的/奶/喂"等语气词和残留
+  note = note.replace(/[了的奶喂]/g,' ');
+  // 4. 去掉奶量短语（带单位）
+  note = note.replace(/[零一二两三四五六七八九十百\d]+\s*(?:毫升|ml|ML|mL)/g,' ');
+  // 5. 去掉裸数字
+  note = note.replace(/\d+/g,' ');
+  // 6. 去掉孤立的中文数字（奶量值，如"一百二十"、"九十"）——仅当两侧不是汉字
+  note = note.replace(/(^|[\s，,。、：:；;])[零一二两三四五六七八九十百]{1,6}(?=[\s，,。、：:；;]|$)/g,'$1');
+  // 7. 整理标点
+  note = note.replace(/[，,。、：:；;\s]+/g,' ').trim();
+  // 8. 去掉首尾残留标点
+  note = note.replace(/^[，,。、：:\s]+|[，,。、：:\s]+$/g,'');
+  return { type:'feed', time:time, value:amount, note:note };
+}
+// 调试钩子：控制台可直接测试解析
+window.__parseVoice = parseVoice;
+
+function voiceAvailable(){
+  if(!voiceState.supported) return false;
+  try{
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    var r = new SR();
+    r.lang = 'zh-CN';
+    return true;
+  }catch(e){ return false; }
+}
+
+window.openVoiceSheet = function(mode){
+  voiceState.mode = mode || 'feed';
+  document.getElementById('voiceSheet').classList.add('show');
+  var isSleep = voiceState.mode === 'sleep';
+  var isGrowth = voiceState.mode === 'growth';
+  document.getElementById('voiceSheetTitle').textContent = isSleep ? '🎤 语音记录睡眠' : (isGrowth ? '🎤 语音记录生长' : '🎤 语音记录');
+  resetVoiceUI();
+  // 不支持语音识别 → 直接显示降级提示
+  if(!voiceAvailable()){
+    document.getElementById('voiceStatus').textContent = '⚠️ 当前浏览器不支持语音识别';
+    document.getElementById('voiceHint').textContent = 'iPhone请点备注框，用键盘上的🎤麦克风听写';
+    document.getElementById('voiceStartBtn').style.display = 'none';
+    var la = document.getElementById('voiceListenArea');
+    // 加一个快捷引导：直接跳去对应面板手动记录
+    la.innerHTML += isSleep
+      ? '<button class="btn-ghost" onclick="closeVoiceSheet()">🌙 手动记录睡眠（入睡/起床按钮）</button>'
+      : (isGrowth
+        ? '<button class="btn-ghost" onclick="closeVoiceSheet()">📏 手动填写生长记录</button>'
+        : '<button class="btn-ghost" onclick="closeVoiceSheet();openFeedSheet(\'bottle\')">🍼 改用瓶喂手动记录</button>');
+  }
+};
+
+function resetVoiceUI(){
+  var isSleep = voiceState.mode === 'sleep';
+  var isGrowth = voiceState.mode === 'growth';
+  document.getElementById('voiceListenArea').style.display = 'block';
+  document.getElementById('voiceResultArea').style.display = 'none';
+  document.getElementById('voiceStatus').textContent = '点击开始说话';
+  document.getElementById('voiceHint').textContent = isSleep
+    ? '例：「昨晚九点半睡，早上六点起」'
+    : (isGrowth
+      ? '例：「体重6.5公斤，身高61，头围39.5」'
+      : '例：「十二点半，吃奶一百五十毫升」');
+  document.getElementById('voiceStartBtn').style.display = '';
+  document.getElementById('voiceMicIcon').textContent = '🎤';
+}
+
+window.voiceStart = function(){
+  if(voiceState.listening){ voiceStop(); return; }
+  if(!voiceAvailable()){
+    toast('当前浏览器不支持语音识别');
+    return;
+  }
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  var rec = new SR();
+  rec.lang = 'zh-CN';
+  rec.continuous = false;
+  rec.interimResults = true;
+  rec.maxAlternatives = 1;
+  voiceState.rec = rec;
+  voiceState.listening = true;
+  voiceState.rawText = '';
+  document.getElementById('voiceStatus').textContent = '🔴 正在听…请说「时间+奶量」';
+  document.getElementById('voiceHint').textContent = '说完会自动停止，例如「十二点半，吃奶一百五十毫升」';
+  document.getElementById('voiceStartBtn').textContent = '⏹ 停止';
+  document.getElementById('voiceMicIcon').textContent = '🔴';
+
+  rec.onresult = function(e){
+    var txt = '';
+    for(var i=0;i<e.results.length;i++){
+      if(e.results[i][0]) txt += e.results[i][0].transcript;
+    }
+    voiceState.rawText = txt;
+    document.getElementById('voiceStatus').textContent = '📝 识别中…' + txt;
+  };
+  rec.onerror = function(e){
+    voiceState.listening = false;
+    document.getElementById('voiceStatus').textContent = '识别失败：' + (e.error||'未知错误');
+    document.getElementById('voiceStartBtn').textContent = '🎤 重新开始';
+    document.getElementById('voiceMicIcon').textContent = '🎤';
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      document.getElementById('voiceHint').textContent = '请允许麦克风权限后重试；iPhone请用键盘🎤听写';
+    }
+  };
+  rec.onend = function(){
+    if(!voiceState.listening) return;
+    voiceState.listening = false;
+    document.getElementById('voiceStartBtn').textContent = '🎤 重新开始';
+    document.getElementById('voiceMicIcon').textContent = '🎤';
+    if(voiceState.rawText){
+      showVoiceResult(voiceState.rawText);
+    }else{
+      document.getElementById('voiceStatus').textContent = '没听清，再试一次';
+    }
+  };
+  try{ rec.start(); }catch(e){ toast('语音启动失败：'+e.message); }
+};
+window.voiceStop = function(){
+  if(voiceState.rec){ try{ voiceState.rec.stop(); }catch(e){} }
+};
+
+function showVoiceResult(text){
+  var parsed = parseVoice(text);
+  voiceState.parsed = parsed;
+  document.getElementById('voiceListenArea').style.display = 'none';
+  document.getElementById('voiceResultArea').style.display = 'block';
+  document.getElementById('voiceRawText').textContent = text;
+  var html = '';
+  var t = parsed.type;
+  if(t === 'diaper'){
+    html += '<div>' + (parsed.sub==='pee'?'💧':'💩') + ' 大小便：<b>' + (parsed.sub==='pee'?'小便':'大便') + '</b></div>';
+    html += '<div>⏰ 时间：<b>' + nowTime() + '</b> <span style="font-size:11px;color:var(--text-sub)">(现在，可改)</span></div>';
+    if(parsed.sub==='poop') html += '<div>📋 性状：<b>正常</b> <span style="font-size:11px;color:var(--text-sub)">(确认后可改)</span></div>';
+  }else if(t === 'vit'){
+    html += '<div>💊 维生素：<b>' + (parsed.sub==='vitAD'?'维生素AD':'维生素D3') + '</b></div>';
+    html += '<div>⏰ 时间：<b>' + nowTime() + '</b> <span style="font-size:11px;color:var(--text-sub)">(现在，可改)</span></div>';
+  }else if(t === 'recorder'){
+    html += '<div>👤 记录人：<b>' + esc(parsed.recorder) + '</b></div>';
+    html += '<div style="font-size:12px;color:var(--text-sub);margin-top:4px">之后的记录都记为 ' + esc(parsed.recorder) + '</div>';
+  }else if(t === 'checkin'){
+    if(parsed.all){
+      html += '<div>✅ 今日任务 <b>全部完成</b></div>';
+    }else{
+      html += '<div>✅ 打卡：<b>' + esc(parsed.taskName) + '</b></div>';
+    }
+  }else if(t === 'milestone'){
+    html += '<div>🏅 里程碑：<b>' + esc(parsed.msName) + '</b></div>';
+    html += '<div style="font-size:12px;color:var(--text-sub);margin-top:4px">将标记为「已达成」</div>';
+  }else if(t === 'mixed'){
+    // 混合：喂奶 + 睡眠
+    var s = parsed.sleep;
+    html += '<div style="font-weight:700;color:var(--blue);margin-bottom:4px">① 🍼 喂奶</div>';
+    html += '<div>⏰ 时间：<b>' + (parsed.feedTime || '<span style="color:#E0709A">未识别（用现在时间）</span>') + '</b> 奶量：<b>' + (parsed.feedValue ? parsed.feedValue+' ml' : '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    html += '<div style="font-weight:700;color:var(--purple);margin:8px 0 4px">② 🌙 睡眠</div>';
+    html += '<div>🌙 入睡：<b>' + (s.sleepStart || '<span style="color:#E0709A">未识别</span>') + '</b>  ☀️ 起床：<b>' + (s.sleepEnd || '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    if(s.sleepStart && s.sleepEnd){
+      var mdur = timeToMin(s.sleepEnd) - timeToMin(s.sleepStart);
+      if(mdur < 0) mdur += 1440;
+      html += '<div>⏱ 睡眠时长：<b style="color:var(--purple)">' + durationText(mdur) + '</b></div>';
+    }
+  }else if(parsed.sleepStart || parsed.sleepEnd){
+    // 睡眠解析结果
+    html += '<div>🌙 入睡：<b>' + (parsed.sleepStart || '<span style="color:#E0709A">未识别</span>') + '</b>' + (parsed.startYesterday ? ' <span style="font-size:11px;color:var(--text-sub)">(昨晚)</span>' : '') + '</div>';
+    html += '<div>☀️ 起床：<b>' + (parsed.sleepEnd || '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    if(parsed.sleepStart && parsed.sleepEnd){
+      var dur = timeToMin(parsed.sleepEnd) - timeToMin(parsed.sleepStart);
+      if(dur < 0) dur += 1440;
+      html += '<div>⏱ 时长：<b style="color:var(--purple)">' + durationText(dur) + '</b></div>';
+    }
+  }else if(parsed.weight || parsed.height || parsed.headCirc){
+    // 生长解析结果
+    html += '<div>📅 日期：<b>今天 (' + todayStr() + ')</b></div>';
+    if(parsed.ageLabel) html += '<div>🎂 月龄：<b>' + esc(parsed.ageLabel) + '</b></div>';
+    html += '<div>⚖️ 体重：<b>' + (parsed.weight ? parsed.weight+' kg' : '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    html += '<div>📏 身高：<b>' + (parsed.height ? parsed.height+' cm' : '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    html += '<div>🎯 头围：<b>' + (parsed.headCirc ? parsed.headCirc+' cm' : '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+  }else{
+    // 喂奶解析结果
+    html += '<div>⏰ 时间：<b>' + (parsed.time || '<span style="color:#E0709A">未识别（将用现在时间）</span>') + '</b></div>';
+    html += '<div>🍼 奶量：<b>' + (parsed.value ? parsed.value+' ml' : '<span style="color:#E0709A">未识别</span>') + '</b></div>';
+    if(parsed.note) html += '<div>📝 备注：' + esc(parsed.note) + '</div>';
+  }
+  document.getElementById('voiceParsed').innerHTML = html;
+}
+
+window.voiceConfirm = function(){
+  var p = voiceState.parsed;
+  if(!p) return;
+  var b = DB.getBaby();
+  var recorder = b.recorder || '妈妈';
+  var t = p.type || 'feed';
+
+  // ===== 大小便语音 =====
+  if(t === 'diaper'){
+    var nowD = new Date();
+    var recD = {
+      id: uid(),
+      ts: nowD.toISOString(),
+      type: p.sub,
+      state: p.sub==='poop' ? '正常' : '',
+      note: '',
+      recorder: recorder
+    };
+    var diapers = DB.getDiapers();
+    diapers.push(recD);
+    DB.setDiapers(diapers);
+    closeSheet('voiceSheet');
+    renderDiapers();
+    toast((p.sub==='pee'?'💧 小便':'💩 大便') + ' 已记录');
+    return;
+  }
+
+  // ===== 维生素语音 =====
+  if(t === 'vit'){
+    var nowV = new Date();
+    var recV = {
+      id: uid(),
+      ts: nowV.toISOString(),
+      type: p.sub,
+      note: '',
+      recorder: recorder
+    };
+    var vits = DB.getVits();
+    vits.push(recV);
+    DB.setVits(vits);
+    closeSheet('voiceSheet');
+    renderVits();
+    toast((p.sub==='vitAD'?'💊 维生素AD':'☀️ 维生素D3') + ' 已记录');
+    return;
+  }
+
+  // ===== A3 记录人 =====
+  if(t === 'recorder'){
+    b.recorder = p.recorder;
+    DB.setBaby(b);
+    updateHeader();
+    closeSheet('voiceSheet');
+    toast('👤 当前记录人已切换为 ' + p.recorder);
+    return;
+  }
+
+  // ===== A1 启蒙打卡 =====
+  if(t === 'checkin'){
+    var td2 = todayStr();
+    var checks = DB.getChecks();
+    if(p.all){
+      // 全部打卡
+      var stg = getStage(TASK_STAGES);
+      var cnt = 0;
+      stg.tasks.forEach(function(tk){
+        var found = false;
+        for(var ci=0; ci<checks.length; ci++){
+          if(checks[ci].date===td2 && checks[ci].taskId===tk.id){ checks[ci].done = true; found = true; break; }
+        }
+        if(!found){ checks.push({date:td2, taskId:tk.id, done:true}); }
+        cnt++;
+      });
+      DB.setChecks(checks);
+      closeSheet('voiceSheet');
+      renderTasks();
+      toast('✅ 今日 ' + cnt + ' 项任务全部打卡');
+    }else{
+      var f2 = false;
+      for(var cj=0; cj<checks.length; cj++){
+        if(checks[cj].date===td2 && checks[cj].taskId===p.taskId){ checks[cj].done = true; f2 = true; break; }
+      }
+      if(!f2) checks.push({date:td2, taskId:p.taskId, done:true});
+      DB.setChecks(checks);
+      closeSheet('voiceSheet');
+      renderTasks();
+      toast('✅ 已打卡：' + p.taskName);
+    }
+    return;
+  }
+
+  // ===== A2 里程碑 =====
+  if(t === 'milestone'){
+    var ms = DB.getMilestones();
+    ms[p.msId] = { status:'achieved', date: todayStr() };
+    DB.setMilestones(ms);
+    closeSheet('voiceSheet');
+    renderMilestones();
+    toast('🏅 已标记达成：' + p.msName);
+    return;
+  }
+
+  // ===== A4 混合记录 =====
+  if(t === 'mixed'){
+    var s2 = p.sleep;
+    // 睡眠部分
+    var sleeps2 = DB.getSleeps();
+    var tdM = todayStr();
+    var yestM = new Date(); yestM.setDate(yestM.getDate()-1);
+    var ydM = dateStr(yestM);
+    var sDate = tdM;
+    if(s2.startYesterday) sDate = ydM;
+    else if(s2.sleepStart && s2.sleepEnd && timeToMin(s2.sleepStart) > timeToMin(s2.sleepEnd)) sDate = ydM;
+    if(s2.sleepStart && s2.sleepEnd){
+      sleeps2.push({ id:uid(), date:sDate, start:s2.sleepStart, end:s2.sleepEnd, recorder:recorder });
+    }else if(s2.sleepStart){
+      sleeps2.push({ id:uid(), date:sDate, start:s2.sleepStart, end:'', recorder:recorder });
+    }else if(s2.sleepEnd){
+      var tg2 = null;
+      for(var si2=sleeps2.length-1; si2>=0; si2--){ if(!sleeps2[si2].end){ tg2 = sleeps2[si2]; break; } }
+      if(tg2) tg2.end = s2.sleepEnd;
+      else sleeps2.push({ id:uid(), date:ydM, start:'', end:s2.sleepEnd, recorder:recorder });
+    }
+    DB.setSleeps(sleeps2);
+    // 喂奶部分
+    var nowM = new Date();
+    var tsM;
+    if(p.feedTime){
+      var fp = p.feedTime.split(':');
+      var fd = new Date();
+      fd.setHours(parseInt(fp[0],10), parseInt(fp[1],10), 0, 0);
+      tsM = fd.toISOString();
+    }else{
+      tsM = nowM.toISOString();
+    }
+    var feedsM = DB.getFeeds();
+    feedsM.push({
+      id: uid(), ts: tsM, type:'bottle', side:'', value: p.feedValue || 0,
+      unit:'ml', note:'', recorder: recorder
+    });
+    DB.setFeeds(feedsM);
+    closeSheet('voiceSheet');
+    renderFeed();
+    renderSleep();
+    var msg = '🎤 已记录';
+    if(p.feedValue) msg += ' 瓶喂' + p.feedValue + 'ml';
+    if(s2.sleepStart || s2.sleepEnd) msg += ' + 睡眠';
+    toast(msg);
+    return;
+  }
+
+  // ===== 睡眠语音 =====
+  if(p.sleepStart || p.sleepEnd){
+    var sleeps = DB.getSleeps();
+    var td = todayStr();
+    var yest = new Date(); yest.setDate(yest.getDate()-1);
+    var yd = dateStr(yest);
+    // 入睡日期：说"昨晚"→昨天；否则入睡时间在起床时间之后（跨夜）→昨天；都没说→今天
+    var sleepDate = td;
+    if(p.startYesterday) sleepDate = yd;
+    else if(p.sleepStart && p.sleepEnd && timeToMin(p.sleepStart) > timeToMin(p.sleepEnd)) sleepDate = yd;
+    else if(p.sleepStart && !p.sleepEnd && timeToMin(p.sleepStart) > timeToMin(nowTime())) sleepDate = yd;
+
+    if(p.sleepStart && p.sleepEnd){
+      // 完整记录（入睡+起床）
+      sleeps.push({ id:uid(), date:sleepDate, start:p.sleepStart, end:p.sleepEnd, recorder:recorder });
+    }else if(p.sleepStart){
+      // 只有入睡
+      sleeps.push({ id:uid(), date:sleepDate, start:p.sleepStart, end:'', recorder:recorder });
+    }else if(p.sleepEnd){
+      // 只有起床：找最近一条没有 end 的记录补上；没有则新建
+      var target = null;
+      for(var i=sleeps.length-1;i>=0;i--){ if(!sleeps[i].end){ target = sleeps[i]; break; } }
+      if(target){
+        target.end = p.sleepEnd;
+      }else{
+        sleeps.push({ id:uid(), date:yd, start:'', end:p.sleepEnd, recorder:recorder });
+      }
+    }
+    DB.setSleeps(sleeps);
+    closeSheet('voiceSheet');
+    renderSleep();
+    var msg = '🎤 已记录睡眠';
+    if(p.sleepStart && p.sleepEnd){
+      var dur = timeToMin(p.sleepEnd)-timeToMin(p.sleepStart);
+      if(dur<0) dur+=1440;
+      msg += ' ' + p.sleepStart + '→' + p.sleepEnd + ' (' + durationText(dur) + ')';
+    }else if(p.sleepStart){
+      msg += ' 🌙 入睡 ' + p.sleepStart;
+    }else{
+      msg += ' ☀️ 起床 ' + p.sleepEnd;
+    }
+    toast(msg);
+    return;
+  }
+
+  // ===== 生长语音 =====
+  if(p.weight || p.height || p.headCirc){
+    var growth = DB.getGrowth();
+    var gdate = todayStr();
+    var ageLabel = p.ageLabel || '';
+    if(!ageLabel){
+      var gb = DB.getBaby();
+      if(gb && gb.birthday){
+        var gm = monthDiff(new Date(gb.birthday), new Date());
+        ageLabel = (gm<1?'不满1个月':gm+'个月');
+      }
+    }
+    // 同一天去重（更新）
+    var gExisted = false;
+    for(var gi=0; gi<growth.length; gi++){
+      if(growth[gi].date === gdate){
+        if(p.weight) growth[gi].weight = p.weight;
+        if(p.height) growth[gi].height = p.height;
+        if(p.headCirc) growth[gi].headCirc = p.headCirc;
+        if(ageLabel) growth[gi].ageLabel = ageLabel;
+        gExisted = true;
+        break;
+      }
+    }
+    if(!gExisted){
+      growth.push({ date:gdate, ageLabel:ageLabel, weight:p.weight||0, height:p.height||0, headCirc:p.headCirc||0 });
+    }
+    DB.setGrowth(growth);
+    closeSheet('voiceSheet');
+    renderGrowthChart();
+    renderGrowthList();
+    var parts = [];
+    if(p.weight) parts.push('体重'+p.weight+'kg');
+    if(p.height) parts.push('身高'+p.height+'cm');
+    if(p.headCirc) parts.push('头围'+p.headCirc+'cm');
+    toast('🎤 已记录生长：' + parts.join(' '));
+    return;
+  }
+
+  // ===== 喂奶语音 =====
+  var now = new Date();
+  var ts;
+  if(p.time){
+    var parts = p.time.split(':');
+    var d = new Date();
+    d.setHours(parseInt(parts[0],10), parseInt(parts[1],10), 0, 0);
+    ts = d.toISOString();
+  }else{
+    ts = now.toISOString();
+  }
+  var rec = {
+    id: uid(),
+    ts: ts,
+    type: 'bottle',
+    side: '',
+    value: p.value || 0,
+    unit: 'ml',
+    note: p.note || '',
+    recorder: recorder
+  };
+  var feeds = DB.getFeeds();
+  feeds.push(rec);
+  DB.setFeeds(feeds);
+  closeSheet('voiceSheet');
+  renderFeed();
+  var timeTxt = p.time ? p.time : pad(now.getHours())+':'+pad(now.getMinutes());
+  toast('🎤 已记录 ' + timeTxt + ' 瓶喂 ' + (p.value||'?') + 'ml');
+};
+// 调试钩子：控制台可模拟识别结果
+window.__voiceSimulate = function(text){
+  showVoiceResult(text);
+};
+window.voiceRetry = function(){
+  document.getElementById('voiceResultArea').style.display = 'none';
+  document.getElementById('voiceListenArea').style.display = 'block';
+  resetVoiceUI();
+};
+window.closeVoiceSheet = function(){
+  if(voiceState.listening){ voiceStop(); voiceState.listening = false; }
+  document.getElementById('voiceSheet').classList.remove('show');
+};
+
+function renderFeed(){
+  var feeds = DB.getFeeds();
+  var td = todayStr();
+  var today = feeds.filter(function(f){ return dateStr(new Date(f.ts))===td; })
+    .sort(function(a,b){ return a.ts<b.ts?-1:1; });
+  // 统计
+  var nBottle=0, totalML=0;
+  today.forEach(function(f){ if(f.type==='bottle'){ nBottle++; totalML += f.value||0; } });
+  document.getElementById('statBottle').textContent = nBottle;
+  document.getElementById('statTotalML').textContent = totalML;
+  document.getElementById('statTotal').textContent = today.length;
+  // 上次喂奶提示
+  if(today.length){
+    var last = today[today.length-1];
+    var text = '🍼 瓶喂 '+last.value+'ml · '+hoursAgoText(last.ts);
+    document.getElementById('lastFeedText').textContent = '距上次喂奶 '+text;
+  }else{
+    document.getElementById('lastFeedText').textContent = '今天还没有喂奶记录';
+  }
+  // 列表
+  var list = document.getElementById('feedList');
+  if(!today.length){
+    list.innerHTML = '<div class="feed-empty">今天还没有喂奶记录<br>点上方大按钮，一键记录</div>';
+    return;
+  }
+  var html = '';
+  today.forEach(function(f){
+    var valTxt = f.value+'ml';
+    var note = f.note ? ' · '+esc(f.note) : '';
+    html += '<div class="feed-item">'+
+      '<div class="f-time">'+pad(new Date(f.ts).getHours())+':'+pad(new Date(f.ts).getMinutes())+'</div>'+
+      '<div class="f-icon">🍼</div>'+
+      '<div class="f-body"><div class="f-title">瓶喂 '+valTxt+'</div>'+
+      '<div class="f-desc">'+hoursAgoText(f.ts)+note+'</div></div>'+
+      '<span class="f-rec">'+esc(f.recorder)+'</span>'+
+      '<button class="f-del" onclick="delFeed(\''+f.id+'\')">🗑</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* =====================================================================
+ * 睡眠模块
+ * ===================================================================== */
+window.markSleepStart = function(){
+  state.sleepMode = 'start';
+  state.sleepTime = nowTime();
+  document.getElementById('sleepSheetTitle').textContent = '🌙 记录入睡时间';
+  document.getElementById('sleepTimeVal').textContent = state.sleepTime;
+  var inp = document.getElementById('sleepTimeInput');
+  if(inp){ inp.value = state.sleepTime; inp.style.display = ''; }
+  document.getElementById('sleepNowLabel').textContent = nowTime();
+  openSheet('sleepSheet');
+};
+window.markSleepEnd = function(){
+  state.sleepMode = 'end';
+  state.sleepTime = nowTime();
+  document.getElementById('sleepSheetTitle').textContent = '☀️ 记录起床时间';
+  document.getElementById('sleepTimeVal').textContent = state.sleepTime;
+  var inp = document.getElementById('sleepTimeInput');
+  if(inp){ inp.value = state.sleepTime; inp.style.display = ''; }
+  document.getElementById('sleepNowLabel').textContent = nowTime();
+  openSheet('sleepSheet');
+};
+window.sleepTimeShift = function(delta){
+  state.sleepTime = minToTime(timeToMin(state.sleepTime) + delta);
+  document.getElementById('sleepTimeVal').textContent = state.sleepTime;
+  var inp = document.getElementById('sleepTimeInput');
+  if(inp) inp.value = state.sleepTime;
+};
+window.syncSleepTimeFromInput = function(){
+  var inp = document.getElementById('sleepTimeInput');
+  if(inp && inp.value){
+    state.sleepTime = inp.value;
+    document.getElementById('sleepTimeVal').textContent = state.sleepTime;
+  }
+};
+window.setSleepNow = function(){
+  state.sleepTime = nowTime();
+  document.getElementById('sleepTimeVal').textContent = state.sleepTime;
+  var inp = document.getElementById('sleepTimeInput');
+  if(inp) inp.value = state.sleepTime;
+};
+window.confirmSleep = function(){
+  var b = DB.getBaby();
+  var sleeps = DB.getSleeps();
+  var td = todayStr();
+  if(state.sleepMode === 'start'){
+    sleeps.push({ id:uid(), date:td, start:state.sleepTime, end:'', recorder:b.recorder||'妈妈' });
+    DB.setSleeps(sleeps);
+    closeSheet('sleepSheet');
+    renderSleep();
+    toast('🌙 已记录入睡 ' + state.sleepTime);
+  }else{
+    // 找到最近一条没有 end 的睡眠记录（当天或前一天）
+    var target = null;
+    for(var i=sleeps.length-1;i>=0;i--){
+      if(!sleeps[i].end){ target = sleeps[i]; break; }
+    }
+    if(!target){
+      // 没有入睡记录，直接补一条
+      sleeps.push({ id:uid(), date:td, start:'', end:state.sleepTime, recorder:b.recorder||'妈妈' });
+      DB.setSleeps(sleeps);
+      closeSheet('sleepSheet');
+      renderSleep();
+      toast('☀️ 已记录起床 ' + state.sleepTime + '（无入睡记录）');
+      return;
+    }
+    target.end = state.sleepTime;
+    DB.setSleeps(sleeps);
+    closeSheet('sleepSheet');
+    renderSleep();
+    var dur = timeToMin(state.sleepTime) - timeToMin(target.start);
+    if(dur < 0) dur += 1440;
+    toast('☀️ 睡眠时长 ' + durationText(dur));
+  }
+};
+window.delSleep = function(id){
+  DB.setSleeps(DB.getSleeps().filter(function(s){ return s.id!==id; }));
+  renderSleep();
+  toast('已删除');
+};
+
+function renderSleep(){
+  var sleeps = DB.getSleeps();
+  // 昨晚 = 今天起床或昨天入睡的睡眠
+  var td = todayStr();
+  var yest = new Date(); yest.setDate(yest.getDate()-1);
+  var yestStr = dateStr(yest);
+  var nights = [];
+  var seen = {};
+  sleeps.slice().reverse().forEach(function(s){
+    var key = s.date + (s.start||'') + (s.end||'');
+    if(seen[key]) return;
+    // 归入"昨晚"：end 是今天的，或 date 是昨天/今天的
+    if((s.end && s.date===td) || s.date===yestStr || s.date===td){
+      if(s.start && s.end){
+        nights.push(s);
+        seen[key]=true;
+      }else if(!s.end && s.date===yestStr){
+        nights.push(s);
+        seen[key]=true;
+      }
+    }
+  });
+  // 汇总显示
+  var sum = document.getElementById('sleepSummary');
+  var lastNight = nights.length ? nights[0] : null;
+  if(lastNight && lastNight.start && lastNight.end){
+    var dur = timeToMin(lastNight.end)-timeToMin(lastNight.start);
+    if(dur<0) dur+=1440;
+    sum.innerHTML = '🌙 昨晚睡了 <span class="big">' + durationText(dur) + '</span>';
+  }else{
+    sum.innerHTML = '🌙 昨晚睡了 <span class="big">--</span>';
+  }
+  // 近7晚列表
+  var list = document.getElementById('sleepList');
+  var items = [];
+  for(var d=0; d<7; d++){
+    var dt = new Date(); dt.setDate(dt.getDate()-d);
+    var ds = dateStr(dt);
+    var daySleeps = sleeps.filter(function(s){ return s.date===ds; });
+    daySleeps.forEach(function(s){ items.push(s); });
+  }
+  if(!items.length){
+    list.innerHTML = '<div class="feed-empty">还没有睡眠记录<br>晚上点「入睡」，早上点「起床」</div>';
+    return;
+  }
+  var html = '';
+  items.slice(0,14).forEach(function(s){
+    var label = s.date===td ? '今天' : (s.date===yestStr ? '昨天' : s.date.substring(5));
+    var range = (s.start||'--:--') + ' → ' + (s.end||'--:--');
+    var dur = (s.start&&s.end) ? durationText((timeToMin(s.end)-timeToMin(s.start)+1440)%1440) : '…';
+    html += '<div class="sleep-item">'+
+      '<div class="s-date">'+label+'</div>'+
+      '<div class="s-range">'+range+'</div>'+
+      '<div class="s-dur">'+dur+'</div>'+
+      '<button class="s-del" onclick="delSleep(\''+s.id+'\')">🗑</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* =====================================================================
+ * 生长模块
+ * ===================================================================== */
+window.switchMetric = function(m){
+  state.currentMetric = m;
+  var tabs = {weight:'mtab-weight', height:'mtab-height', headCirc:'mtab-head'};
+  for(var k in tabs){ document.getElementById(tabs[k]).classList.toggle('active', k===m); }
+  renderGrowthChart();
+};
+
+function growthMonthsFor(rec){
+  var b = DB.getBaby();
+  if(!b || !b.birthday) return null;
+  var m = monthDiff(new Date(b.birthday), new Date(rec.date));
+  return m>=0 ? m : null;
+}
+
+function renderGrowthChart(){
+  var metric = state.currentMetric;
+  var cfg = METRIC_CFG[metric];
+  var key = METRIC_KEY[metric];
+  var data = DB.getGrowth();
+  var b = DB.getBaby();
+  var gender = (b && b.gender==='girl') ? 'girl' : 'boy';
+  var who = WHO[gender][key];
+  var container = document.getElementById('chartContainer');
+
+  var recs = data.filter(function(g){ return g[key] && g[key]>0; })
+    .map(function(g){ return { months: growthMonthsFor(g)!=null?growthMonthsFor(g):0, v:g[key], date:g.date, label:g.ageLabel||'' }; })
+    .filter(function(r){ return r.months!==null; })
+    .sort(function(a,b){ return a.months-b.months; });
+
+  if(!recs.length){
+    container.innerHTML = '<div style="text-align:center;color:var(--text-sub);font-size:13px;padding:30px 0">暂无'+cfg.label+'记录<br>添加记录后显示曲线与 WHO 标准对照</div>';
+    return;
+  }
+
+  // 画布参数
+  var W=640, H=340, P={top:26,right:30,bottom:44,left:48};
+  var cw=W-P.left-P.right, ch=H-P.top-P.bottom;
+  var maxMonth = Math.max(24, Math.ceil((recs[recs.length-1].months+2)/3)*3);
+
+  // Y 范围：取 WHO P3~P97 与数据范围并集
+  var allV = who.p3.concat(who.p97).concat(recs.map(function(r){return r.v;}));
+  var minV = Math.min.apply(null, allV);
+  var maxV = Math.max.apply(null, allV);
+  var range = maxV-minV || 1;
+  minV -= range*0.08; maxV += range*0.08;
+
+  function x(m){ return P.left + (m/maxMonth)*cw; }
+  function y(v){ return P.top + ch - ((v-minV)/(maxV-minV))*ch; }
+
+  var svgNS='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+
+  // 从 CSS 变量取实际颜色（适配深色模式）
+  var cs = getComputedStyle(document.body);
+  var cGrid = cs.getPropertyValue('--border').trim() || '#EDF2F7';
+  var cGridSub = cs.getPropertyValue('--bg').trim() || '#F7FAFD';
+  var cTextSub = cs.getPropertyValue('--text-faint').trim() || '#999';
+  var cTextMid = cs.getPropertyValue('--text-sub').trim() || '#718096';
+  var cMed = cs.getPropertyValue('--text-faint').trim() || '#A0AEC0';
+
+  // 网格
+  for(var g=0; g<=4; g++){
+    var yy=P.top+(ch/4)*g;
+    var val=maxV-(maxV-minV)*(g/4);
+    var line=document.createElementNS(svgNS,'line');
+    line.setAttribute('x1',P.left); line.setAttribute('y1',yy);
+    line.setAttribute('x2',W-P.right); line.setAttribute('y2',yy);
+    line.setAttribute('stroke',cGrid); line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+    var txt=document.createElementNS(svgNS,'text');
+    txt.setAttribute('x',P.left-8); txt.setAttribute('y',yy+4);
+    txt.setAttribute('text-anchor','end'); txt.setAttribute('font-size','11');
+    txt.setAttribute('fill',cTextSub);
+    txt.textContent=val.toFixed(cfg.step<0.5?1:0);
+    svg.appendChild(txt);
+  }
+  // X 轴月份刻度
+  var step = maxMonth<=12?2: (maxMonth<=24?4:6);
+  for(var mx=0; mx<=maxMonth; mx+=step){
+    var xx=x(mx);
+    var t2=document.createElementNS(svgNS,'text');
+    t2.setAttribute('x',xx); t2.setAttribute('y',H-P.bottom+20);
+    t2.setAttribute('text-anchor','middle'); t2.setAttribute('font-size','11');
+    t2.setAttribute('fill',cTextSub);
+    t2.textContent=mx+'月';
+    svg.appendChild(t2);
+    var vl=document.createElementNS(svgNS,'line');
+    vl.setAttribute('x1',xx); vl.setAttribute('y1',P.top);
+    vl.setAttribute('x2',xx); vl.setAttribute('y2',P.top+ch);
+    vl.setAttribute('stroke',cGridSub); vl.setAttribute('stroke-width','1');
+    svg.appendChild(vl);
+  }
+
+  // WHO 正常范围带（P3-P97）
+  var band=document.createElementNS(svgNS,'path');
+  var d='M '+x(0)+' '+y(who.p3[0]);
+  for(var i=1;i<who.p3.length;i++) d+=' L '+x(i)+' '+y(who.p3[i]);
+  for(var j=who.p97.length-1;j>=0;j--) d+=' L '+x(j)+' '+y(who.p97[j]);
+  d+=' Z';
+  band.setAttribute('d',d);
+  band.setAttribute('fill','rgba(74,154,232,0.10)');
+  band.setAttribute('stroke','#A8D4F7');
+  band.setAttribute('stroke-width','0.8');
+  svg.appendChild(band);
+
+  // WHO P50 中位线
+  var med=document.createElementNS(svgNS,'path');
+  var md='M '+x(0)+' '+y(who.p50[0]);
+  for(var k=1;k<who.p50.length;k++) md+=' L '+x(k)+' '+y(who.p50[k]);
+  med.setAttribute('d',md);
+  med.setAttribute('fill','none');
+  med.setAttribute('stroke',cMed);
+  med.setAttribute('stroke-width','1.5');
+  med.setAttribute('stroke-dasharray','5,4');
+  svg.appendChild(med);
+
+  // 宝宝数据折线
+  if(recs.length>=2){
+    var pl=document.createElementNS(svgNS,'path');
+    var pd='';
+    for(var r=0;r<recs.length;r++){
+      pd += (r===0?'M ':' L ')+x(recs[r].months)+' '+y(recs[r].v);
+    }
+    pl.setAttribute('d',pd);
+    pl.setAttribute('fill','none');
+    pl.setAttribute('stroke','#4A9AE8');
+    pl.setAttribute('stroke-width','2.5');
+    pl.setAttribute('stroke-linecap','round');
+    pl.setAttribute('stroke-linejoin','round');
+    svg.appendChild(pl);
+  }
+  // 数据点
+  recs.forEach(function(r){
+    var c=document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx',x(r.months)); c.setAttribute('cy',y(r.v));
+    c.setAttribute('r','5'); c.setAttribute('fill','#fff');
+    c.setAttribute('stroke','#4A9AE8'); c.setAttribute('stroke-width','2.5');
+    svg.appendChild(c);
+    var vt=document.createElementNS(svgNS,'text');
+    vt.setAttribute('x',x(r.months)); vt.setAttribute('y',y(r.v)-9);
+    vt.setAttribute('text-anchor','middle'); vt.setAttribute('font-size','11');
+    vt.setAttribute('font-weight','700'); vt.setAttribute('fill','#4A9AE8');
+    vt.textContent=r.v;
+    svg.appendChild(vt);
+  });
+
+  // Y 轴单位
+  var yl=document.createElementNS(svgNS,'text');
+  yl.setAttribute('x',8); yl.setAttribute('y',P.top-8);
+  yl.setAttribute('font-size','11'); yl.setAttribute('fill',cTextMid);
+  yl.textContent=cfg.label+'('+cfg.unit+')';
+  svg.appendChild(yl);
+
+  container.innerHTML='';
+  container.appendChild(svg);
+}
+
+window.addGrowthRecord = function(){
+  var date = document.getElementById('growthDate').value;
+  var weight = parseFloat(document.getElementById('growthWeight').value);
+  var height = parseFloat(document.getElementById('growthHeight').value);
+  var headCirc = parseFloat(document.getElementById('growthHeadCirc').value);
+  if(!date){ toast('请选择日期'); return; }
+  if(!weight && !height && !headCirc){ toast('至少填写一项'); return; }
+  var data = DB.getGrowth();
+  // 同一天去重（更新）
+  var existed = false;
+  for(var i=0;i<data.length;i++){
+    if(data[i].date===date){
+      data[i].weight = weight||0; data[i].height = height||0; data[i].headCirc = headCirc||0;
+      existed = true; break;
+    }
+  }
+  if(!existed){
+    var b = DB.getBaby();
+    var ageLabel = document.getElementById('growthAge').value.trim();
+    if(!ageLabel && b && b.birthday){
+      var m = monthDiff(new Date(b.birthday), new Date(date));
+      ageLabel = (m<1?'不满1个月':m+'个月');
+    }
+    data.push({ date:date, ageLabel:ageLabel, weight:weight||0, height:height||0, headCirc:headCirc||0 });
+  }
+  DB.setGrowth(data);
+  document.getElementById('growthWeight').value='';
+  document.getElementById('growthHeight').value='';
+  document.getElementById('growthHeadCirc').value='';
+  document.getElementById('growthAge').value='';
+  renderGrowthChart();
+  renderGrowthList();
+  toast('✅ 生长记录已保存');
+};
+window.delGrowth = function(idx){
+  var data = DB.getGrowth();
+  var sorted = data.slice().sort(function(a,b){ return a.date>b.date?-1:1; });
+  var target = sorted[idx];
+  if(!target) return;
+  for(var i=0;i<data.length;i++){
+    if(data[i].date===target.date){ data.splice(i,1); break; }
+  }
+  DB.setGrowth(data);
+  renderGrowthChart();
+  renderGrowthList();
+};
+
+function renderGrowthList(){
+  var data = DB.getGrowth().slice().sort(function(a,b){ return a.date>b.date?-1:1; });
+  var list = document.getElementById('growthList');
+  if(!data.length){
+    list.innerHTML = '<div class="feed-empty">还没有记录<br>每月测量一次，添加后自动生成曲线</div>';
+    return;
+  }
+  var html = '';
+  data.forEach(function(g, i){
+    html += '<div class="growth-item">'+
+      '<div class="g-date">'+g.date.substring(5)+(g.ageLabel?'<br><span style="font-size:10px">'+esc(g.ageLabel)+'</span>':'')+'</div>'+
+      '<div class="g-vals">'+
+        (g.weight?'<span class="g-w"><b>'+g.weight+'</b>kg</span>':'')+
+        (g.height?'<span class="g-h"><b>'+g.height+'</b>cm</span>':'')+
+        (g.headCirc?'<span class="g-hc"><b>'+g.headCirc+'</b>cm</span>':'')+
+      '</div>'+
+      '<button class="g-del" onclick="delGrowth('+i+')">🗑</button>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* =====================================================================
+ * 启蒙模块
+ * ===================================================================== */
+function todayTasks(){
+  var stage = getStage(TASK_STAGES);
+  var td = todayStr();
+  var checks = DB.getChecks();
+  var map = {};
+  checks.forEach(function(c){ if(c.date===td) map[c.taskId]=c.done; });
+  return stage.tasks.map(function(t){
+    return { def:t, done: !!map[t.id] };
+  });
+}
+
+window.toggleTask = function(taskId){
+  var td = todayStr();
+  var checks = DB.getChecks();
+  var found = false;
+  for(var i=0;i<checks.length;i++){
+    if(checks[i].date===td && checks[i].taskId===taskId){
+      checks[i].done = !checks[i].done;
+      found = true; break;
+    }
+  }
+  if(!found) checks.push({ date:td, taskId:taskId, done:true });
+  DB.setChecks(checks);
+  renderTasks();
+};
+
+function calcStreak(){
+  var checks = DB.getChecks();
+  var d = new Date();
+  var streak = 0;
+  while(true){
+    var ds = dateStr(d);
+    var stage = getStage(TASK_STAGES);
+    var ids = stage.tasks.map(function(t){ return t.id; });
+    var doneMap = {};
+    checks.forEach(function(c){ if(c.date===ds && c.done) doneMap[c.taskId]=true; });
+    var allDone = true;
+    for(var i=0;i<ids.length;i++){
+      if(!doneMap[ids[i]]){ allDone=false; break; }
+    }
+    if(allDone){ streak++; }
+    else break;
+    d.setDate(d.getDate()-1);
+    if(streak>400) break;
+  }
+  return streak;
+}
+
+function renderTasks(){
+  var tasks = todayTasks();
+  var done = tasks.filter(function(t){ return t.done; }).length;
+  document.getElementById('playDone').textContent = done;
+  document.getElementById('playTotal').textContent = tasks.length;
+  document.getElementById('playStreak').textContent = calcStreak();
+  var stage = getStage(TASK_STAGES);
+  document.getElementById('playStageBadge').textContent = '🌱 启蒙阶段：'+stage.label;
+  var list = document.getElementById('taskList');
+  var html = '';
+  tasks.forEach(function(t){
+    html += '<div class="task-item'+(t.done?' done':'')+'" onclick="toggleTask(\''+t.def.id+'\')">'+
+      '<div class="task-check"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>'+
+      '<div class="task-body">'+
+        '<div class="task-name">'+esc(t.def.name)+'</div>'+
+        '<div class="task-meta"><span class="cat-badge">'+esc(t.def.cat)+'</span><span class="dur-badge">'+esc(t.def.dur)+'</span></div>'+
+      '</div>'+
+    '</div>';
+  });
+  list.innerHTML = html;
+}
+
+/* ===== 里程碑 ===== */
+function renderMilestones(){
+  var stage = getStage(MS_STAGES);
+  var ms = DB.getMilestones();
+  var board = document.getElementById('milestoneBoard');
+  var html = '';
+  stage.cats.forEach(function(cat){
+    html += '<div class="ms-cat"><div class="ms-cat-header">'+cat.icon+' '+cat.label+'</div><div class="ms-list">';
+    cat.items.forEach(function(item){
+      var st = (ms[item.id] && ms[item.id].status) || 'pending';
+      var dt = (ms[item.id] && ms[item.id].date) || '';
+      var labels = {pending:'待', progress:'中', achieved:'成'};
+      html += '<div class="ms-item" onclick="cycleMilestone(\''+item.id+'\')">'+
+        '<div class="ms-status '+st+'">'+labels[st]+'</div>'+
+        '<div class="ms-info"><div class="ms-name">'+esc(item.name)+'</div><div class="ms-range">'+esc(item.range)+'</div></div>'+
+        (dt?'<div class="ms-date">'+dt.substring(5)+'</div>':'')+
+      '</div>';
+    });
+    html += '</div></div>';
+  });
+  board.innerHTML = html;
+}
+
+window.cycleMilestone = function(id){
+  var ms = DB.getMilestones();
+  var cur = (ms[id] && ms[id].status) || 'pending';
+  var next = { pending:'progress', progress:'achieved', achieved:'pending' }[cur];
+  ms[id] = { status:next, date: next==='achieved' ? todayStr() : '' };
+  DB.setMilestones(ms);
+  renderMilestones();
+};
+
+/* =====================================================================
+ * 设置
+ * ===================================================================== */
+window.openSettings = function(){
+  var b = DB.getBaby();
+  document.getElementById('setName').value = b.name || '';
+  document.getElementById('setBirthday').value = b.birthday || '';
+  document.getElementById('setGender').value = b.gender || 'boy';
+  document.getElementById('setTheme').value = (b && b.theme) || 'auto';
+  renderMembers();
+  document.getElementById('settingsModal').classList.add('show');
+};
+window.closeSettings = function(){
+  var b = DB.getBaby();
+  var name = document.getElementById('setName').value.trim();
+  var birthday = document.getElementById('setBirthday').value;
+  var gender = document.getElementById('setGender').value;
+  if(name) b.name = name;
+  if(birthday) b.birthday = birthday;
+  b.gender = gender;
+  DB.setBaby(b);
+  document.getElementById('settingsModal').classList.remove('show');
+  updateHeader();
+  renderGrowthChart();
+  toast('✅ 设置已保存');
+};
+
+/* ===== 主题（C3 深色模式） ===== */
+function applyTheme(){
+  var b = DB.getBaby();
+  var theme = (b && b.theme) || 'auto';
+  var body = document.body;
+  body.classList.remove('dark','auto-dark');
+  if(theme === 'dark') body.classList.add('dark');
+  else if(theme === 'auto') body.classList.add('auto-dark');
+}
+window.saveTheme = function(v){
+  var b = DB.getBaby();
+  b.theme = v;
+  DB.setBaby(b);
+  applyTheme();
+};
+window.confirmClear = function(){
+  document.getElementById('settingsModal').classList.remove('show');
+  document.getElementById('clearModal').classList.add('show');
+};
+window.closeClearModal = function(){
+  document.getElementById('clearModal').classList.remove('show');
+};
+window.clearAllData = function(){
+  DB.clearAll();
+  document.getElementById('clearModal').classList.remove('show');
+  initBaby();
+  location.reload();
+};
+
+/* ===== 导出 / 导入 ===== */
+window.exportData = function(){
+  var data = DB.exportAll();
+  var blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = '宝宝启蒙台_备份_'+todayStr()+'.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('📤 备份文件已导出');
+};
+window.importData = function(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var data = JSON.parse(e.target.result);
+      if(!DB.importAll(data)){ toast('❌ 文件格式不正确'); return; }
+      toast('✅ 数据已恢复');
+      setTimeout(function(){ location.reload(); }, 800);
+    }catch(err){
+      toast('❌ 导入失败：文件格式不正确');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+};
+
+/* =====================================================================
+ * Sheet 通用
+ * ===================================================================== */
+function openSheet(id){
+  document.getElementById(id).classList.add('show');
+}
+function closeSheet(id){
+  document.getElementById(id).classList.remove('show');
+}
+window.closeFeedSheet = function(){ closeSheet('feedSheet'); };
+window.closeSleepSheet = function(){ closeSheet('sleepSheet'); };
+// 点击遮罩关闭
+document.addEventListener('click', function(e){
+  if(e.target.classList && e.target.classList.contains('sheet-mask')){
+    e.target.classList.remove('show');
+  }
+  if(e.target.classList && e.target.classList.contains('modal-mask')){
+    e.target.classList.remove('show');
+  }
+});
+
+/* =====================================================================
+ * 统计模块（B1今日汇总 / B2奶量趋势 / B3睡眠规律 / B4生长报告）
+ * ===================================================================== */
+var milkRange = 7;
+
+function renderStats(){
+  renderTodaySummary();
+  renderMilkTrend();
+  renderSleepTrend();
+  renderGrowthReportPreview();
+}
+
+// ===== B1 今日汇总 =====
+function renderTodaySummary(){
+  var td = todayStr();
+  var feeds = DB.getFeeds().filter(function(f){ return dateStr(new Date(f.ts))===td; });
+  var n = feeds.length;
+  var ml = 0;
+  feeds.forEach(function(f){ ml += f.value||0; });
+  document.getElementById('stFeedCount').textContent = n;
+  document.getElementById('stFeedML').textContent = ml;
+  // 上次喂奶时间
+  if(n){
+    var last = feeds[feeds.length-1];
+    document.getElementById('stLastFeed').textContent = pad(new Date(last.ts).getHours())+':'+pad(new Date(last.ts).getMinutes());
+  }else{
+    document.getElementById('stLastFeed').textContent = '--';
+  }
+  // 夜间睡眠：今天起床的或昨天的睡眠
+  var sleeps = DB.getSleeps();
+  var yest = new Date(); yest.setDate(yest.getDate()-1);
+  var yd = dateStr(yest);
+  var lastNight = null;
+  for(var i=sleeps.length-1;i>=0;i--){
+    var s = sleeps[i];
+    if(s.end && s.date===td){ lastNight = s; break; }
+    if(s.start && s.end && (s.date===yd)){ lastNight = s; break; }
+  }
+  if(lastNight && lastNight.start && lastNight.end){
+    var d = timeToMin(lastNight.end)-timeToMin(lastNight.start);
+    if(d<0) d+=1440;
+    document.getElementById('stSleep').textContent = durationText(d);
+  }else{
+    document.getElementById('stSleep').textContent = '--';
+  }
+  // 启蒙任务
+  var tasks = todayTasks();
+  var done = tasks.filter(function(t){ return t.done; }).length;
+  document.getElementById('stTasks').textContent = done + '/' + tasks.length;
+  document.getElementById('statsDateLabel').textContent = td;
+  // 大小便
+  var diapers = DB.getDiapers().filter(function(x){ return dateStr(new Date(x.ts))===td; });
+  var nPee = 0, nPoop = 0;
+  diapers.forEach(function(x){ if(x.type==='pee') nPee++; else nPoop++; });
+  document.getElementById('stDiaper').textContent = nPee + '/' + nPoop;
+  // 维生素
+  var vits = DB.getVits().filter(function(x){ return dateStr(new Date(x.ts))===td; });
+  var hasAD = false, hasD3 = false;
+  vits.forEach(function(x){ if(x.type==='vitAD') hasAD=true; if(x.type==='vitD3') hasD3=true; });
+  document.getElementById('stVit').textContent = (hasAD?'AD✓':'AD·') + ' ' + (hasD3?'D3✓':'D3·');
+}
+
+// ===== B2 奶量趋势 =====
+window.switchMilkRange = function(days){
+  milkRange = days;
+  var btns = document.querySelectorAll('.range-tab');
+  for(var i=0;i<btns.length;i++) btns[i].classList.toggle('active', parseInt(btns[i].getAttribute('onclick').match(/\d+/)[0],10)===days);
+  renderMilkTrend();
+};
+
+function renderMilkTrend(){
+  var days = milkRange;
+  var feeds = DB.getFeeds();
+  var container = document.getElementById('milkChart');
+  document.getElementById('milkTrendSub').textContent = '近' + days + '天每日总奶量';
+  // 生成每天的数据
+  var data = [];
+  for(var d=days-1; d>=0; d--){
+    var dt = new Date(); dt.setDate(dt.getDate()-d);
+    var ds = dateStr(dt);
+    var dayFeeds = feeds.filter(function(f){ return dateStr(new Date(f.ts))===ds; });
+    var ml = 0;
+    dayFeeds.forEach(function(f){ ml += f.value||0; });
+    data.push({date:ds, ml:ml, label: d===0?'今天':(d===1?'昨天':dt.getMonth()+1+'/'+dt.getDate())});
+  }
+  var maxML = 0;
+  data.forEach(function(x){ if(x.ml>maxML) maxML=x.ml; });
+  if(maxML===0) maxML = 100;
+
+  var W=640,H=200,P={top:20,right:16,bottom:30,left:44};
+  var cw=W-P.left-P.right, ch=H-P.top-P.bottom;
+  var svgNS='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  var cs = getComputedStyle(document.body);
+  var cGrid = cs.getPropertyValue('--border').trim() || '#EDF2F7';
+  var cText = cs.getPropertyValue('--text-faint').trim() || '#999';
+  var barW = Math.min(26, cw/data.length*0.55);
+
+  function x(i){ return P.left + (i+0.5)*(cw/data.length); }
+  function y(v){ return P.top + ch - (v/maxML)*ch; }
+
+  // 网格
+  for(var g=0; g<=3; g++){
+    var yy=P.top+(ch/3)*g;
+    var val=Math.round(maxML*(1-g/3));
+    var ln=document.createElementNS(svgNS,'line');
+    ln.setAttribute('x1',P.left); ln.setAttribute('y1',yy);
+    ln.setAttribute('x2',W-P.right); ln.setAttribute('y2',yy);
+    ln.setAttribute('stroke',cGrid); ln.setAttribute('stroke-width','1');
+    svg.appendChild(ln);
+    var t=document.createElementNS(svgNS,'text');
+    t.setAttribute('x',P.left-6); t.setAttribute('y',yy+4);
+    t.setAttribute('text-anchor','end'); t.setAttribute('font-size','10');
+    t.setAttribute('fill',cText);
+    t.textContent=val;
+    svg.appendChild(t);
+  }
+  // 柱子 + 标签
+  var hasAny = false;
+  data.forEach(function(item, i){
+    if(item.ml>0) hasAny = true;
+    var bx = x(i)-barW/2, by = y(item.ml);
+    var rect=document.createElementNS(svgNS,'rect');
+    rect.setAttribute('x',bx); rect.setAttribute('y',by);
+    rect.setAttribute('width',barW); rect.setAttribute('height',Math.max(2,P.top+ch-by));
+    rect.setAttribute('rx','4');
+    rect.setAttribute('fill', item.ml>0 ? 'var(--blue)' : (cs.getPropertyValue('--border').trim()||'#EDF2F7'));
+    if(item.ml>0){
+      rect.setAttribute('fill', i===data.length-1 ? '#34B37E' : '#4A9AE8');
+    }
+    svg.appendChild(rect);
+    if(item.ml>0){
+      var vt=document.createElementNS(svgNS,'text');
+      vt.setAttribute('x',x(i)); vt.setAttribute('y',by-5);
+      vt.setAttribute('text-anchor','middle'); vt.setAttribute('font-size','10');
+      vt.setAttribute('font-weight','700'); vt.setAttribute('fill','#4A9AE8');
+      vt.textContent=item.ml;
+      svg.appendChild(vt);
+    }
+    var lb=document.createElementNS(svgNS,'text');
+    lb.setAttribute('x',x(i)); lb.setAttribute('y',H-P.bottom+16);
+    lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','9');
+    lb.setAttribute('fill',cText);
+    lb.textContent = (data.length>10 && i%3!==0) ? '' : item.label;
+    svg.appendChild(lb);
+  });
+  if(!hasAny){
+    container.innerHTML = '<div style="text-align:center;color:var(--text-sub);font-size:13px;padding:30px 0">近'+days+'天还没有喂奶记录<br>记录几次后这里会显示趋势</div>';
+    return;
+  }
+  container.innerHTML='';
+  container.appendChild(svg);
+  // 洞察
+  var totalML = 0, daysWith = 0;
+  data.forEach(function(x){ totalML += x.ml; if(x.ml>0) daysWith++; });
+  var avg = daysWith ? Math.round(totalML/daysWith) : 0;
+  var insight = document.createElement('div');
+  insight.className = 'insight-box';
+  insight.textContent = '📈 近' + days + '天共 ' + totalML + 'ml，平均每天 ' + avg + 'ml（' + daysWith + ' 天有记录）';
+  container.appendChild(insight);
+}
+
+// ===== B3 睡眠规律 =====
+function renderSleepTrend(){
+  var sleeps = DB.getSleeps();
+  var container = document.getElementById('sleepTrendChart');
+  var insight = document.getElementById('sleepInsight');
+  // 近7晚完整记录
+  var nights = [];
+  var td = todayStr();
+  var seen = {};
+  sleeps.slice().reverse().forEach(function(s){
+    if(seen[s.date+s.start]) return;
+    if(s.start && s.end && s.start.indexOf(':')>=0 && s.end.indexOf(':')>=0){
+      nights.push(s);
+      seen[s.date+s.start]=true;
+    }
+  });
+  nights = nights.slice(0,7).reverse();
+  if(nights.length < 1){
+    container.innerHTML = '<div style="text-align:center;color:var(--text-sub);font-size:13px;padding:30px 0">记录睡眠后这里会显示规律</div>';
+    insight.innerHTML = '';
+    return;
+  }
+  var W=640,H=200,P={top:16,right:40,bottom:30,left:40};
+  var cw=W-P.left-P.right, ch=H-P.top-P.bottom;
+  var svgNS='http://www.w3.org/2000/svg';
+  var svg=document.createElementNS(svgNS,'svg');
+  svg.setAttribute('viewBox','0 0 '+W+' '+H);
+  svg.setAttribute('preserveAspectRatio','xMidYMid meet');
+  var cs = getComputedStyle(document.body);
+  var cText = cs.getPropertyValue('--text-faint').trim() || '#999';
+  var cGrid = cs.getPropertyValue('--border').trim() || '#EDF2F7';
+  function x(i){ return P.left + (i+0.5)*(cw/nights.length); }
+  function y(tm){ return P.top + (timeToMin(tm)/1440)*ch; }
+  // 0-24点参考线
+  for(var hh=0; hh<=24; hh+=6){
+    var yy=P.top+(hh/24)*ch;
+    var ln=document.createElementNS(svgNS,'line');
+    ln.setAttribute('x1',P.left); ln.setAttribute('y1',yy);
+    ln.setAttribute('x2',W-P.right); ln.setAttribute('y2',yy);
+    ln.setAttribute('stroke',cGrid); ln.setAttribute('stroke-width','1');
+    svg.appendChild(ln);
+    var t=document.createElementNS(svgNS,'text');
+    t.setAttribute('x',W-P.right+6); t.setAttribute('y',yy+4);
+    t.setAttribute('font-size','10'); t.setAttribute('fill',cText);
+    t.textContent=pad(hh)+':00';
+    svg.appendChild(t);
+  }
+  // 每晚的睡眠条
+  nights.forEach(function(s, i){
+    var start = timeToMin(s.start), end = timeToMin(s.end);
+    if(end < start) end += 1440;   // 跨天
+    var bx = x(i)-12, by = y(start), bh = ((end-start)/1440)*ch;
+    var rect=document.createElementNS(svgNS,'rect');
+    rect.setAttribute('x',bx); rect.setAttribute('y',by);
+    rect.setAttribute('width','24'); rect.setAttribute('height',Math.max(3,bh));
+    rect.setAttribute('rx','6'); rect.setAttribute('fill','#7B5FA0');
+    rect.setAttribute('opacity','0.85');
+    svg.appendChild(rect);
+    var lb=document.createElementNS(svgNS,'text');
+    lb.setAttribute('x',x(i)); lb.setAttribute('y',H-P.bottom+16);
+    lb.setAttribute('text-anchor','middle'); lb.setAttribute('font-size','9');
+    lb.setAttribute('fill',cText);
+    var d = new Date(s.date);
+    lb.textContent = (s.date===td?'今':(d.getMonth()+1)+'/'+d.getDate());
+    svg.appendChild(lb);
+  });
+  container.innerHTML='';
+  container.appendChild(svg);
+  // 洞察：平均入睡/起床/时长
+  var sSum=0, eSum=0, dSum=0, cnt=0;
+  nights.forEach(function(s){
+    var st=timeToMin(s.start), en=timeToMin(s.end);
+    if(en<st) en+=1440;
+    sSum+=st; eSum+=en; dSum+=(en-st); cnt++;
+  });
+  var avgStart = minToTime(Math.round(sSum/cnt));
+  var avgEnd = minToTime(Math.round(eSum/cnt));
+  var avgDur = durationText(Math.round(dSum/cnt));
+  insight.className = 'insight-box';
+  insight.innerHTML = '🌙 平均入睡 <b>' + avgStart + '</b> · 平均起床 <b>' + avgEnd + '</b> · 平均时长 <b>' + avgDur + '</b>';
+}
+
+// ===== B4 生长发育报告 =====
+function renderGrowthReportPreview(){
+  var growth = DB.getGrowth();
+  var card = document.getElementById('growthReportCard');
+  if(!growth.length){
+    card.innerHTML = '<div style="text-align:center;color:var(--text-sub);font-size:13px;padding:16px 0">还没有生长记录<br>添加记录后可生成报告</div>';
+    return;
+  }
+  var sorted = growth.slice().sort(function(a,b){ return a.date>b.date?1:-1; });
+  var last = sorted[sorted.length-1];
+  var prev = sorted.length>=2 ? sorted[sorted.length-2] : null;
+  var b = DB.getBaby();
+  var gender = (b && b.gender==='girl') ? 'girl' : 'boy';
+  var months = growthMonthsFor(last);
+  var html = '';
+  // 与上次对比
+  if(prev){
+    var parts = [];
+    if(last.weight && prev.weight) parts.push('体重 +' + (last.weight-prev.weight).toFixed(1) + 'kg');
+    if(last.height && prev.height) parts.push('身高 +' + (last.height-prev.height).toFixed(1) + 'cm');
+    if(last.headCirc && prev.headCirc) parts.push('头围 +' + (last.headCirc-prev.headCirc).toFixed(1) + 'cm');
+    if(parts.length) html += '<div class="report-line"><span class="lbl">与上次对比</span><span class="val" style="color:var(--green)">' + parts.join(' ') + '</span></div>';
+  }
+  // WHO 百分位
+  if(months!==null && months<=24){
+    var keys = [['weight','体重'],['height','身高'],['head','头围']];
+    keys.forEach(function(k){
+      var val = last[k[0]==='head'?'headCirc':k[0]];
+      if(!val) return;
+      var who = WHO[gender][k[0]];
+      var idx = Math.min(24, Math.floor(months));
+      var p3 = who.p3[idx], p50 = who.p50[idx], p97 = who.p97[idx];
+      var pct;
+      if(val < p3) pct = '<span class="report-badge alert">低于P3 偏瘦/偏小</span>';
+      else if(val <= p97) pct = '<span class="report-badge">正常范围 (' + (val<=p50?'P3-P50':'P50-P97') + ')</span>';
+      else pct = '<span class="report-badge warn">高于P97 偏高</span>';
+      html += '<div class="report-line"><span class="lbl">' + k[1] + ' ' + val + ' ' + (k[0]==='weight'?'kg':'cm') + ' (WHO ' + months + '月)</span><span class="val">' + pct + '</span></div>';
+    });
+  }
+  html += '<div class="report-line"><span class="lbl">最近记录</span><span class="val">' + last.date + (last.ageLabel?' · '+esc(last.ageLabel):'') + '</span></div>';
+  card.innerHTML = html;
+}
+
+// 生成完整报告（弹窗显示，可复制）
+window.showGrowthReport = function(){
+  var growth = DB.getGrowth();
+  if(!growth.length){ toast('还没有生长记录'); return; }
+  var b = DB.getBaby();
+  var sorted = growth.slice().sort(function(a,b){ return a.date>b.date?1:-1; });
+  var last = sorted[sorted.length-1];
+  var prev = sorted.length>=2 ? sorted[sorted.length-2] : null;
+  var gender = (b && b.gender==='girl') ? 'girl' : 'boy';
+  var months = growthMonthsFor(last);
+  var lines = [];
+  lines.push('🏅 ' + (b.name||'宝宝') + ' 生长发育报告');
+  lines.push('📅 报告日期：' + todayStr() + '（' + babyMonths() + '个月）');
+  lines.push('──────────────────');
+  lines.push('📏 最新测量（' + last.date + '）：');
+  if(last.weight) lines.push('  体重：' + last.weight + ' kg');
+  if(last.height) lines.push('  身高：' + last.height + ' cm');
+  if(last.headCirc) lines.push('  头围：' + last.headCirc + ' cm');
+  if(prev){
+    lines.push('📈 与上次对比：');
+    if(last.weight && prev.weight) lines.push('  体重 +' + (last.weight-prev.weight).toFixed(1) + ' kg');
+    if(last.height && prev.height) lines.push('  身高 +' + (last.height-prev.height).toFixed(1) + ' cm');
+    if(last.headCirc && prev.headCirc) lines.push('  头围 +' + (last.headCirc-prev.headCirc).toFixed(1) + ' cm');
+  }
+  if(months!==null && months<=24){
+    lines.push('🌐 WHO 标准对照（' + months + '个月）：');
+    [['weight','体重'],['height','身高'],['head','头围']].forEach(function(k){
+      var val = last[k[0]==='head'?'headCirc':k[0]];
+      if(!val) return;
+      var who = WHO[gender][k[0]];
+      var idx = Math.min(24, Math.floor(months));
+      var p3 = who.p3[idx], p50 = who.p50[idx], p97 = who.p97[idx];
+      var verdict = val<p3 ? '低于P3' : (val<=p97 ? '正常' : '高于P97');
+      lines.push('  ' + k[1] + ' ' + val + (k[0]==='weight'?'kg':'cm') + '（参考 ' + p3 + '~' + p97 + '）→ ' + verdict);
+    });
+  }
+  lines.push('──────────────────');
+  lines.push('数据来自「宝宝启蒙台」');
+  var report = lines.join('\n');
+  // 用模态框展示
+  var modal = document.createElement('div');
+  modal.className = 'modal-mask show';
+  modal.innerHTML = '<div class="modal"><button class="modal-close" onclick="this.parentNode.parentNode.remove()">✕</button>' +
+    '<div class="modal-title">📄 生长发育报告</div>' +
+    '<pre style="font-size:13px;line-height:1.8;white-space:pre-wrap;background:var(--bg);border-radius:12px;padding:14px;margin-bottom:12px;color:var(--text)">' + esc(report) + '</pre>' +
+    '<button class="btn-big green" onclick="copyReport(this)">📋 复制报告</button>' +
+    '<button class="btn-ghost" onclick="this.parentNode.parentNode.remove()">关闭</button></div>';
+  document.body.appendChild(modal);
+};
+window.copyReport = function(btn){
+  var pre = btn.parentNode.querySelector('pre');
+  var text = pre.textContent;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){ toast('📋 已复制，可粘贴到微信'); });
+  }else{
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('📋 已复制，可粘贴到微信');
+  }
+};
+
+/* =====================================================================
+ * 启动
+ * ===================================================================== */
+function init(){
+  initBaby();
+  applyTheme();
+  document.getElementById('growthDate').value = todayStr();
+  updateHeader();
+  renderFeed();
+  renderDiapers();
+  renderVits();
+  renderSleep();
+  renderGrowthChart();
+  renderGrowthList();
+  renderTasks();
+  renderMilestones();
+  switchTab('feed');
+}
+init();
+
+})();
+</script>
+</body>
+</html>
