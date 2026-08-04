@@ -1696,19 +1696,27 @@ function extractGrowth(text){
 // type: 'feed' | 'sleep' | 'growth' | 'checkin' | 'milestone' | 'recorder' | 'mixed' | 'diaper' | 'vit'
 function parseVoice(text){
   var t = text;
-  // 大小便："换了尿布"/"尿了"/"小便了"/"拉臭臭了"/"大便了"
-  if(/尿布|换了尿|小便|尿了|尿尿/.test(t) && !/大便|拉|臭臭|便便/.test(t)){
-    return { type:'diaper', sub:'pee' };
-  }
-  if(/大便|拉臭臭|拉粑粑|便便|拉屎|拉稀|臭臭/.test(t)){
+  // 统一转小写用于匹配（语音识别常返回小写字母）
+  var tl = t.toLowerCase();
+
+  // ===== 大小便 =====
+  // 便：拉了/拉臭臭/拉粑粑/便便/拉屎/拉稀/臭臭/拉肚肚/拉肚子
+  if(/大便|拉了|拉臭臭|拉粑粑|拉屎|拉稀|臭臭|便便|拉肚肚|拉肚子|拉便/.test(tl)){
     return { type:'diaper', sub:'poop' };
   }
-  // 维生素："吃了AD"/"喂了维生素AD"/"吃了D3"
-  if(/维生素AD|维AD|吃了AD|喂了AD|AD了|维生素a|维生素A/.test(t)){
-    return { type:'vit', sub:'vitAD' };
+  // 尿：尿布/尿不湿/尿了/尿尿/小便/撒尿
+  if(/尿布|尿不湿|换了尿|小便|尿了|尿尿|撒尿|尿湿/.test(tl)){
+    return { type:'diaper', sub:'pee' };
   }
-  if(/维生素D3|维D3|吃了D3|喂了D3|D3了|维生素d3/.test(t)){
+  // ===== 维生素 =====
+  // D3：维生素d3/维d3/d3/滴三/滴3/地三/第三/维D三/D三
+  // 注：中文语境下 \b 边界失效，用宽松匹配 d3/d三（喂奶场景误伤概率极低）
+  if(/维生素?\s*d\s*(?:3|三)|维\s*d\s*(?:3|三)|(?:^|[^a-z0-9])d\s*(?:3|三)|滴三|滴3|地三|第三/.test(tl)){
     return { type:'vit', sub:'vitD3' };
+  }
+  // AD：维生素ad/维ad/\bad\b（注意排除单词中的ad）
+  if(/维生素\s*ad|维\s*ad|\bad\b|\ba\s*d\b/.test(tl)){
+    return { type:'vit', sub:'vitAD' };
   }
   // A3 记录人："这次奶奶记的" / "妈妈记录"
   var mRec = t.match(/(?:这次|今天|刚才|以后)?\s*(奶奶|妈妈|爸爸|爷爷|外公|外婆|姥姥|姥爷|哥哥|姐姐)\s*(?:记的|记录|记|来记)/);
