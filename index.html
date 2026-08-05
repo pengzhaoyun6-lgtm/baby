@@ -83,10 +83,14 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 /* ===== Tabs ===== */
 .tab-panel{display:none;padding:14px 14px 20px;max-width:640px;margin:0 auto}
-/* AI Tab 撑满视口（流内 flex，高度=视口-header，输入框/发送按钮永远完整可见） */
+/* AI Tab 微信式聊天布局：fixed 铺满全屏，输入行固定底部（键盘弹出自动贴键盘顶） */
 #panel-ai{display:none;max-width:720px;flex-direction:column;
-  height:calc(100dvh - 72px);height:calc(100vh - 72px);margin:0 auto;padding:14px 14px 10px;overflow:hidden}
+  position:fixed;left:72px;right:0;top:0;bottom:0;height:auto;margin:0 auto;padding:12px 14px 8px;z-index:50;
+  background:var(--bg)}
 #panel-ai.active{display:flex;animation:none}
+@media (max-width:480px){
+  #panel-ai{left:64px}
+}
 #panel-ai .ai-hero{flex-shrink:0}
 #panel-ai .ai-report-grid{flex-shrink:0}
 #panel-ai .ai-chat-box{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0}
@@ -1300,7 +1304,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.6';
+var APP_VERSION = '5.1.7';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5800,15 +5804,19 @@ function autoRepairGarbled(){
 /* =====================================================================
  * 启动
  * ===================================================================== */
-/* AI 面板高度精确适配：visualViewport（键盘弹出/地址栏变化都正确，兼容旧 iOS） */
+/* AI 面板微信式适配：键盘弹出时高度=可视高度（输入行贴键盘顶），无键盘时 fixed 全屏 */
 function fitAIViewport(){
   var panel = document.getElementById('panel-ai');
   if(!panel) return;
   if(getComputedStyle(panel).display === 'none') return;
   var vv = window.visualViewport;
-  var h = vv && vv.height ? vv.height : (window.innerHeight || document.documentElement.clientHeight);
-  // 键盘弹出时 visualViewport 变矮，面板高度随之缩小，输入行始终可见
-  panel.style.height = Math.max(220, h - 72) + 'px';
+  if(vv && vv.height && vv.height < (window.innerHeight || 0) - 60){
+    // 键盘弹出：面板高度 = 键盘上方的可视高度（微信式：输入行紧贴键盘顶）
+    panel.style.height = vv.height + 'px';
+  }else{
+    // 无键盘：fixed bottom:0 铺满
+    panel.style.height = '';
+  }
 }
 (function(){
   if(window.visualViewport){
