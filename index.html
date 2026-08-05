@@ -83,13 +83,10 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 /* ===== Tabs ===== */
 .tab-panel{display:none;padding:14px 14px 20px;max-width:640px;margin:0 auto}
-/* AI Tab 撑满视口（绝对定位铺满，输入框/发送按钮永远完整可见） */
+/* AI Tab 撑满视口（流内 flex，高度=视口-header，输入框/发送按钮永远完整可见） */
 #panel-ai{display:none;max-width:720px;flex-direction:column;
-  position:fixed;left:72px;right:0;top:0;bottom:0;height:auto;margin:0;padding:14px 14px 10px;z-index:50}
-#panel-ai.active{display:flex}
-@media (max-width:480px){
-  #panel-ai{left:64px}
-}
+  height:calc(100dvh - 72px);height:calc(100vh - 72px);margin:0 auto;padding:14px 14px 10px;overflow:hidden}
+#panel-ai.active{display:flex;animation:none}
 #panel-ai .ai-hero{flex-shrink:0}
 #panel-ai .ai-report-grid{flex-shrink:0}
 #panel-ai .ai-chat-box{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0}
@@ -1303,7 +1300,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.4';
+var APP_VERSION = '5.1.5';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
