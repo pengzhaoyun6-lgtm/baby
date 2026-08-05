@@ -1249,8 +1249,8 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
         <label style="font-size:15px;font-weight:800;color:var(--blue)">☁️ 多设备同步</label>
         <span id="syncStatus" style="font-size:11px;color:var(--text-faint)">未开启</span>
       </div>
-      <div style="font-size:11.5px;color:var(--text-sub);line-height:1.5">开启后，记录自动同步到云端。家人手机填同一个 Token 即可共享同一份数据（老婆记录→你打开自动更新）。</div>
-      <input id="setSyncToken" type="password" placeholder="GitHub Token（gh...）" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;background:var(--bg)" oninput="saveSyncToken(this.value)">
+      <div style="font-size:11.5px;color:var(--text-sub);line-height:1.5">开启后，记录自动同步到云端（Gitee 私有仓库，国内秒级）。家人手机填同一个 Token 即可共享同一份数据（老婆记录→你打开自动更新）。</div>
+      <input id="setSyncToken" type="password" placeholder="Gitee 私人令牌" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;background:var(--bg)" oninput="saveSyncToken(this.value)">
       <div style="display:flex;gap:8px">
         <label class="btn-primary" style="flex:1;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--blue);box-shadow:0 4px 12px rgba(74,154,232,.3);min-height:42px">☁️ 开启同步
           <input type="checkbox" id="setSyncOn" style="display:none" onchange="toggleSync(this.checked)">
@@ -5448,21 +5448,22 @@ window.aiVoiceInput2 = function(){
 };
 
 /* =====================================================================
- * 云同步（☁️ GitHub 私有仓库）—— 多设备数据共享
+ * 云同步（☁️ Gitee 私有仓库）—— 多设备数据共享（国产，国内访问快）
  * ===================================================================== */
-var SYNC_REPO = 'pengzhaoyun6-lgtm/baby-sync';
+var SYNC_OWNER = 'pzy192518';
+var SYNC_REPO = SYNC_OWNER + '/baby-sync';
 var SYNC_FILE = 'baby-data.json';
-var SYNC_BRANCH = 'main';
-var syncState = { on:false, token:'', lastSync:'', timer:null };
+var SYNC_BRANCH = 'master';  // Gitee 默认分支是 master
+var syncState = { on:false, token:'', lastSync:'', timer:null, sha:null };
 
 function loadSyncState(){
   try{
     var s = JSON.parse(localStorage.getItem('wbb2_sync')||'{}');
-    syncState.on = !!s.on; syncState.token = s.token||''; syncState.lastSync = s.lastSync||'';
+    syncState.on = !!s.on; syncState.token = s.token||''; syncState.lastSync = s.lastSync||''; syncState.sha = s.sha||null;
   }catch(e){}
 }
 function saveSyncState(){
-  localStorage.setItem('wbb2_sync', JSON.stringify({on:syncState.on, token:syncState.token, lastSync:syncState.lastSync}));
+  localStorage.setItem('wbb2_sync', JSON.stringify({on:syncState.on, token:syncState.token, lastSync:syncState.lastSync, sha:syncState.sha}));
 }
 function getSyncToken(){
   return syncState.token;
@@ -5476,7 +5477,7 @@ window.toggleSync = function(on){
   saveSyncState();
   var st = document.getElementById('syncStatus');
   if(on){
-    if(!syncState.token){ toast('请先填写 GitHub Token'); syncState.on=false; saveSyncState(); if(st) st.textContent='未开启'; return; }
+    if(!syncState.token){ toast('请先填写 Gitee Token'); syncState.on=false; saveSyncState(); if(st) st.textContent='未开启'; return; }
     if(st) st.textContent = '同步中…';
     doSync(false).then(function(){ updateSyncUI(); });
   }else{
@@ -5486,7 +5487,7 @@ window.toggleSync = function(on){
 };
 window.manualSync = function(){
   if(!syncState.on && !syncState.token){ toast('请先填写 Token 并开启同步'); return; }
-  if(!syncState.token){ toast('请先填写 GitHub Token'); return; }
+  if(!syncState.token){ toast('请先填写 Gitee Token'); return; }
   syncState.on = true; saveSyncState();
   updateSyncUI();
   toast('🔄 正在同步…');
@@ -5534,21 +5535,23 @@ function unpackAll(data){
   });
 }
 
-/* GitHub Contents API 调用 */
+/* Gitee Contents API 调用（全部参数走 query，规避 CORS 预检限制） */
 function ghApi(method, path, body){
-  var url = 'https://api.github.com/repos/' + SYNC_REPO + '/contents/' + path;
+  var url = 'https://gitee.com/api/v5/repos/' + SYNC_REPO + '/contents/' + path + '?access_token=' + encodeURIComponent(getSyncToken());
+  // 把 body 参数合并进 query string（Gitee CORS 预检不放开 content-type 头，只能全走 query）
+  if(body){
+    for(var k in body){
+      if(body.hasOwnProperty(k)) url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(body[k]);
+    }
+  }
   var opt = {
     method: method,
-    headers: {
-      'Authorization': 'token ' + getSyncToken(),
-      'Accept': 'application/vnd.github+json'
-    }
+    headers: { 'Accept': 'application/json' }
   };
-  if(body) opt.body = JSON.stringify(body);
-  // 带超时（30s）的 fetch，避免手机网络卡死
+  // 带超时（15s）的 fetch，避免手机网络卡死
   var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   if(ctrl) opt.signal = ctrl.signal;
-  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 30000) : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 15000) : null;
   return fetch(url, opt).then(function(r){
     return r.json().then(function(j){ return {ok: r.ok, j: j}; });
   }).catch(function(e){
@@ -5577,7 +5580,7 @@ function countLocalRecords(){
 function doSync(force){
   if(!syncState.token) return Promise.reject(new Error('未配置 Token'));
   var local = packAll();
-  return ghApi('GET', SYNC_FILE + '?ref=' + SYNC_BRANCH).then(function(res){
+  return ghApi('GET', SYNC_FILE).then(function(res){
     if(res.ok && res.j.content){
       // 远端存在 → 比较时间戳
       try{
@@ -5589,6 +5592,7 @@ function doSync(force){
         if(remoteT > localT || (localEmpty && !force)){
           // 远端更新 或 本地是空数据 → 拉取
           unpackAll(remote);
+          syncState.sha = res.j.sha;
           syncState.lastSync = new Date().toLocaleString();
           saveSyncState();
           updateSyncUI();
@@ -5610,6 +5614,16 @@ function doSync(force){
     }
   });
 }
+
+/* 快速同步（记录后自动）：直接用缓存 sha 上传，省掉 GET 请求（1次完成） */
+function doSyncFast(){
+  if(!syncState.token) return Promise.reject(new Error('未配置 Token'));
+  if(!syncState.sha){
+    // 无缓存 sha → 走完整同步（首次）
+    return doSync(false);
+  }
+  return uploadSync(syncState.sha);
+}
 function uploadSync(sha){
   var local = packAll();
   var body = {
@@ -5618,17 +5632,22 @@ function uploadSync(sha){
     branch: SYNC_BRANCH
   };
   if(sha) body.sha = sha;
-  return ghApi('PUT', SYNC_FILE, body).then(function(res){
+  // Gitee 创建用 POST、更新用 PUT（带 sha）
+  return ghApi(sha ? 'PUT' : 'POST', SYNC_FILE, body).then(function(res){
     if(res.ok){
+      syncState.sha = res.j.content.sha;  // 缓存最新 sha，下次直接上传
       syncState.lastSync = new Date().toLocaleString();
       saveSyncState();
       return 'up';
     }
-    if(res.j && res.j.message && res.j.message.indexOf('sha') >= 0){
-      // sha 冲突 → 重新拉取
+    try{ localStorage.setItem('wbb2_sync_err', JSON.stringify(res.j).slice(0,200)); }catch(e){}
+    if(res.j && res.j.message && String(res.j.message).indexOf('sha') >= 0){
+      // sha 冲突（另一设备已更新）→ 清缓存，走完整同步拉取最新再合并
+      syncState.sha = null;
+      saveSyncState();
       return doSync(true);
     }
-    throw new Error((res.j && res.j.message) || '上传失败');
+    throw new Error((res.j && (res.j.message || res.j.error)) || '上传失败');
   });
 }
 function refreshAll(){
@@ -5691,7 +5710,7 @@ function autoRepairGarbled(){
   if(!detectGarbledLocal()) return null;
   toast('🔧 检测到本地数据乱码，正在从云端修复…');
   // 强制拉取：直接读云端并覆盖本地（不做时间戳比较，避免把乱码传上去）
-  return ghApi('GET', SYNC_FILE + '?ref=' + SYNC_BRANCH).then(function(res){
+  return ghApi('GET', SYNC_FILE).then(function(res){
     if(res.ok && res.j.content){
       try{
         var remote = JSON.parse(decodeURIComponent(escape(atob(res.j.content.replace(/\n/g,'')))));
