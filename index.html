@@ -1300,7 +1300,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.1';
+var APP_VERSION = '5.1.2';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5359,7 +5359,7 @@ function callDeepSeek(key, messages, onOk, onErr){
   fetch('https://api.deepseek.com/chat/completions', {
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-    body: JSON.stringify({model:'deepseek-chat', messages:messages, max_tokens:1200, temperature:0.7})
+    body: JSON.stringify({model:'deepseek-chat', messages:messages, max_tokens:2000, temperature:0.7})
   }).then(function(r){ return r.json().then(function(j){ return {ok:r.ok, j:j}; }); })
   .then(function(res){
     if(res.ok && res.j.choices && res.j.choices[0]){
@@ -5545,16 +5545,22 @@ function packAll(){
   }
   return data;
 }
+var syncApplying = false;  // 拉取应用数据期间不触发自动上传（防止拉取后重传覆盖）
 function unpackAll(data){
   if(!data || !data.meta || !data.meta.babies) throw new Error('数据格式不正确');
-  DB.setMeta(data.meta);
-  data.meta.babies.forEach(function(b){
-    var id = b.id;
-    var d = data[id] || {};
-    ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'].forEach(function(k){
-      if(d[k] !== undefined) DB._set(id+'_'+k, d[k]);
+  syncApplying = true;
+  try{
+    DB.setMeta(data.meta);
+    data.meta.babies.forEach(function(b){
+      var id = b.id;
+      var d = data[id] || {};
+      ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'].forEach(function(k){
+        if(d[k] !== undefined) DB._set(id+'_'+k, d[k]);
+      });
     });
-  });
+  }finally{
+    syncApplying = false;
+  }
 }
 
 /* Gitee Contents API 调用（全部参数走 query，规避 CORS 预检限制） */
@@ -5685,6 +5691,7 @@ function refreshAll(){
 /* 记录后自动同步（防抖5秒） */
 function scheduleSync(){
   if(!syncState.on || !syncState.token) return;
+  if(syncApplying) return;  // 拉取应用数据期间不触发
   if(syncState.timer) clearTimeout(syncState.timer);
   syncState.timer = setTimeout(function(){
     doSync(false).catch(function(){ /* 静默失败，下次再试 */ });
