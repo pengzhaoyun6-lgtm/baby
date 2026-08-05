@@ -5212,9 +5212,11 @@ function renderAIQuick(){
   });
   box.innerHTML = html;
 }
+/* 内嵌默认 DeepSeek Key（用户已提供，打开链接即用 AI，无需配置） */
+var AI_KEY_DEFAULT = 'sk-25f108faa34d44328f4ad87c2cc4bb9d';
 function getAIKey(){
   var b = DB.getBaby();
-  return (b && b.aiKey) || '';
+  return (b && b.aiKey) || AI_KEY_DEFAULT;
 }
 window.saveAIKey = function(key){
   var b = DB.getBaby();
