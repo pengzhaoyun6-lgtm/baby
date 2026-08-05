@@ -5565,7 +5565,7 @@ function doSync(force){
     if(res.ok && res.j.content){
       // 远端存在 → 比较时间戳
       try{
-        var remote = JSON.parse(atob(res.j.content.replace(/\n/g,'')));
+        var remote = JSON.parse(decodeURIComponent(escape(atob(res.j.content.replace(/\n/g,'')))));
         var localT = new Date(local.syncedAt).getTime();
         var remoteT = new Date(remote.syncedAt || 0).getTime();
         // 本地全新空数据（无任何记录）时，不覆盖远端，直接拉取
@@ -5656,13 +5656,83 @@ function initSync(){
   updateSyncUI();
 }
 
+/* 🔧 乱码自动检测修复：本地数据若有乱码（å 特征），从云端重新拉取覆盖 */
+function detectGarbledLocal(){
+  var meta = DB.getMeta();
+  if(!meta) return false;
+  var txt = JSON.stringify(meta);
+  if(txt.indexOf('å') >= 0 || txt.indexOf('ä') >= 0) return true;
+  if(meta.babies){
+    for(var i=0;i<meta.babies.length;i++){
+      var v = DB._get(meta.babies[i].id+'_baby', null);
+      if(v && (JSON.stringify(v).indexOf('å') >= 0 || JSON.stringify(v).indexOf('ä') >= 0)) return true;
+    }
+  }
+  return false;
+}
+function autoRepairGarbled(){
+  if(!detectGarbledLocal()) return null;
+  toast('🔧 检测到本地数据乱码，正在从云端修复…');
+  // 强制拉取：直接读云端并覆盖本地（不做时间戳比较，避免把乱码传上去）
+  return ghApi('GET', SYNC_FILE + '?ref=' + SYNC_BRANCH).then(function(res){
+    if(res.ok && res.j.content){
+      try{
+        var remote = JSON.parse(decodeURIComponent(escape(atob(res.j.content.replace(/\n/g,'')))));
+        // 先彻底清空本地所有数据键（含乱码的 _baby 键），再解包云端干净数据
+        var allKeys = [];
+        for(var i=0;i<localStorage.length;i++){
+          var k = localStorage.key(i);
+          if(k.indexOf('wbb2_') === 0 && k !== 'wbb2_sync') allKeys.push(k);
+        }
+        allKeys.forEach(function(k){ localStorage.removeItem(k); });
+        unpackAll(remote);
+        initBaby();  // 用干净 meta 重建
+        // 强制同步 current 宝宝的 _baby 键（防止 id 不一致导致乱码残留）
+        var meta2 = DB.getMeta();
+        if(meta2 && meta2.babies.length){
+          var cur2 = meta2.babies.filter(function(x){ return x.id===meta2.current; })[0] || meta2.babies[0];
+          DB._set(cur2.id+'_baby', cur2);
+          meta2.current = cur2.id;
+          DB.setMeta(meta2);
+        }
+        syncState.lastSync = new Date().toLocaleString();
+        saveSyncState();
+        toast('✅ 乱码已修复');
+      }catch(e){
+        toast('⚠️ 云端数据解析失败，请手动清除数据');
+      }
+    }else{
+      toast('⚠️ 云端暂无数据，无法修复');
+    }
+  }).catch(function(){
+    toast('⚠️ 云端修复失败，请检查网络');
+  });
+}
+
 /* =====================================================================
  * 启动
  * ===================================================================== */
 function init(){
   initBaby();
   applyTheme();
+  // 先检测修复乱码（同步前，避免把乱码上传覆盖云端）
+  if(detectGarbledLocal()){
+    // 乱码：清空本地 + 拉云端 → 修复完成后再完整渲染
+    var garbledRepair = autoRepairGarbled();
+    if(garbledRepair){
+      garbledRepair.then(function(){
+        fullRender();
+        initSync();
+      }).catch(function(){
+        fullRender();
+      });
+      return;
+    }
+  }
   initSync();
+  fullRender();
+}
+function fullRender(){
   renderSideBaby();
   document.getElementById('growthDate').value = todayStr();
   updateHeader();
