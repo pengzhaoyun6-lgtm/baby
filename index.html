@@ -1300,7 +1300,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.5';
+var APP_VERSION = '5.1.6';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1779,7 +1779,7 @@ window.switchTab = function(tab){
   if(tab==='knowledge') renderKnowledge();
   if(tab==='ai'){
     renderAIQuick();
-    // 切到 AI 立即把输入框滚进视野（手机端）
+    fitAIViewport();  // 用 visualViewport 精确适配，键盘弹出/地址栏变化都正确
     setTimeout(function(){
       var inp = document.getElementById('aiInput2');
       if(inp && inp.scrollIntoView) inp.scrollIntoView({block:'nearest'});
@@ -5800,6 +5800,24 @@ function autoRepairGarbled(){
 /* =====================================================================
  * 启动
  * ===================================================================== */
+/* AI 面板高度精确适配：visualViewport（键盘弹出/地址栏变化都正确，兼容旧 iOS） */
+function fitAIViewport(){
+  var panel = document.getElementById('panel-ai');
+  if(!panel) return;
+  if(getComputedStyle(panel).display === 'none') return;
+  var vv = window.visualViewport;
+  var h = vv && vv.height ? vv.height : (window.innerHeight || document.documentElement.clientHeight);
+  // 键盘弹出时 visualViewport 变矮，面板高度随之缩小，输入行始终可见
+  panel.style.height = Math.max(220, h - 72) + 'px';
+}
+(function(){
+  if(window.visualViewport){
+    window.visualViewport.addEventListener('resize', fitAIViewport);
+    window.visualViewport.addEventListener('scroll', fitAIViewport);
+  }
+  window.addEventListener('resize', function(){ setTimeout(fitAIViewport, 60); });
+  window.addEventListener('orientationchange', function(){ setTimeout(fitAIViewport, 300); });
+})();
 function init(){
   initBaby();
   applyTheme();
