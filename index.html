@@ -1311,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.8';
+var APP_VERSION = '5.1.9';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5409,11 +5409,6 @@ window.aiAsk2 = function(q){
   document.getElementById('aiInput2').value = q;
   aiSend2();
 };
-window.aiSend2 = function(){
-  var input = document.getElementById('aiInput2');
-  var area = document.getElementById('aiMsgArea2');
-  aiSendCore(input, area);
-};
 function aiSendCore(input, area){
   var q = input.value.trim();
   if(!q) return;
@@ -5442,53 +5437,83 @@ function aiSendCore(input, area){
 
 /* ===== AI 语音输入（微信式交互：点按→正在听→识别结果填入→自动发送） ===== */
 var aiSR = null;
+var aiVoiceActive = false;  // 是否正在语音识别（决定发送按钮=完成）
+
+/* 结束语音：commit=true 发送识别结果，false 取消 */
+function aiVoiceEnd(commit){
+  aiVoiceActive = false;
+  var mic = document.getElementById('aiMic2');
+  var input = document.getElementById('aiInput2');
+  var sendBtn = document.querySelector('.ai-send-btn');
+  if(mic){ mic.textContent = '🎤'; mic.classList.remove('listening'); }
+  if(input){ input.placeholder = '输入或语音输入你的问题…'; }
+  if(sendBtn){ sendBtn.textContent = '发送'; }
+  if(aiSR){ try{ aiSR.stop(); }catch(e){} }
+  if(commit && input && input.value.trim()){
+    toast('✅ 识别到：' + input.value.trim().slice(0, 20));
+    aiSend2();
+  }else if(commit && input){
+    toast('❌ 没听清，请再点🎤说一次');
+  }
+}
 window.aiVoiceInput2 = function(){
   var mic = document.getElementById('aiMic2');
   var input = document.getElementById('aiInput2');
+  var sendBtn = document.querySelector('.ai-send-btn');
+  if(aiVoiceActive){
+    // 识别中再点🎤 = 取消（不发送）
+    aiVoiceEnd(false);
+    toast('已取消');
+    return;
+  }
   if(!voiceAvailable()){
     toast('⚠️ 当前浏览器不支持语音识别，请手动输入');
     return;
   }
-  if(aiSR && aiSR.listening){
-    aiSR.stop();
-    mic.textContent = '🎤';
-    mic.classList.remove('listening');
-    input.placeholder = '输入或语音输入你的问题…';
-    return;
-  }
+  aiVoiceActive = true;
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   aiSR = new SR();
   aiSR.lang = 'zh-CN';
-  aiSR.interimResults = false;
+  aiSR.interimResults = true;  // 实时显示识别文字（像微信一样边听边出字）
   aiSR.maxAlternatives = 1;
+  aiSR.continuous = false;
   aiSR.onstart = function(){
     mic.textContent = '🔴';
     mic.classList.add('listening');
     input.placeholder = '🎤 正在听…请说话';
+    if(sendBtn) sendBtn.textContent = '完成';  // 发送按钮变"完成"
     input.focus();
-    toast('🎤 正在听，请说问题…（再点🎤停止）');
+    toast('🎤 正在听，说完点「完成」');
   };
   aiSR.onresult = function(e){
-    var txt = e.results[0][0].transcript;
+    // 实时累积识别文字到输入框（不自动发送，等用户点完成）
+    var txt = '';
+    for(var i = 0; i < e.results.length; i++){
+      txt += e.results[i][0].transcript;
+    }
     input.value = txt;
-    input.placeholder = '输入或语音输入你的问题…';
-    mic.textContent = '🎤';
-    mic.classList.remove('listening');
-    toast('✅ 识别到：' + txt.slice(0, 20));
-    aiSend2();
   };
   aiSR.onerror = function(e){
+    if(!aiVoiceActive) return;
+    aiVoiceActive = false;
     mic.textContent = '🎤';
     mic.classList.remove('listening');
     input.placeholder = '输入或语音输入你的问题…';
+    if(sendBtn) sendBtn.textContent = '发送';
     toast('❌ 没听清：' + (e.error||'未知错误') + '，请再点🎤说一次');
   };
   aiSR.onend = function(){
-    mic.textContent = '🎤';
-    mic.classList.remove('listening');
-    if(!input.value) input.placeholder = '输入或语音输入你的问题…';
+    // 识别自然结束（没点完成）：视为完成并发送
+    if(aiVoiceActive) aiVoiceEnd(true);
   };
   aiSR.start();
+};
+/* 发送按钮：识别中点击 = 完成并发送；平时 = 正常发送 */
+window.aiSend2 = function(){
+  if(aiVoiceActive){ aiVoiceEnd(true); return; }
+  var input = document.getElementById('aiInput2');
+  var area = document.getElementById('aiMsgArea2');
+  aiSendCore(input, area);
 };
 
 /* =====================================================================
