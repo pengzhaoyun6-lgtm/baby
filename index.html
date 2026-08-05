@@ -1188,37 +1188,6 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 </div>
 
 <!-- ===== AI Chat Modal ===== -->
-<div class="modal-mask" id="aiModal">
-  <div class="modal" style="max-width:560px;max-height:85vh;display:flex;flex-direction:column;padding:0">
-    <div class="ai-modal-header">
-      <div style="display:flex;align-items:center;gap:8px;font-weight:800;font-size:16px">
-        <span>🤖 AI 成长助手</span>
-        <span id="aiModelTag" style="font-size:10px;background:var(--blue-light);color:var(--blue);padding:2px 8px;border-radius:8px;font-weight:600">DeepSeek</span>
-      </div>
-      <button onclick="closeAIChat()" style="font-size:18px;color:var(--text-faint);padding:6px 10px;min-height:40px">✕</button>
-    </div>
-    <div class="ai-hint" id="aiHint">
-      <span>💡 AI 会自动读取宝宝的记录数据，直接问就行，不用描述背景</span>
-    </div>
-    <div class="ai-msg-area" id="aiMsgArea">
-      <div class="ai-msg ai-bot">
-        <div class="ai-msg-icon">🤖</div>
-        <div class="ai-bubble">你好！我是宝宝的 AI 成长助手。你可以问我：<br>• "宝宝最近睡眠怎么样？"<br>• "今天奶量正常吗？"<br>• "3个月该练什么？"<br>• "下一针疫苗什么时候？"</div>
-      </div>
-    </div>
-    <div class="ai-quick" id="aiQuick">
-      <button onclick="aiAsk('宝宝最近睡眠怎么样？有什么需要注意的吗')">🌙 睡眠分析</button>
-      <button onclick="aiAsk('最近奶量正常吗？')">🍼 奶量评估</button>
-      <button onclick="aiAsk('这个月龄该重点练什么？')">🎯 本月重点</button>
-      <button onclick="aiAsk('接下来该打什么疫苗？')">💉 疫苗提醒</button>
-    </div>
-    <div class="ai-input-row">
-      <input id="aiInput" placeholder="输入你的问题…" onkeydown="if(event.key==='Enter')aiSend()">
-      <button onclick="aiSend()" style="min-width:52px;min-height:44px;background:var(--blue);color:#fff;border-radius:12px;font-size:13px;font-weight:700">发送</button>
-    </div>
-  </div>
-</div>
-
 <!-- ===== Settings Modal ===== -->
 <div class="modal-mask" id="settingsModal">
   <div class="modal">
@@ -4746,7 +4715,10 @@ function renderHome(){
   // ③ 身高体重（3天没记录提醒）
   var lastGDate = lastG ? dateStr(new Date(lastG.ts)) : '';
   var gDiff = lastGDate ? Math.round((new Date(td)-new Date(lastGDate))/86400000) : 999;
-  if(gDiff > 3) tasks.push({icon:'📏', text:'该记录身高体重了', act:gDiff>14?'超'+gDiff+'天 ›':(gDiff>7?'已'+gDiff+'天 ›':'›'), tab:'growth', done:false});
+  if(gDiff > 3){
+    var gText = gDiff >= 999 ? '还没有生长记录' : (gDiff>14?'已'+gDiff+'天没记录':'已'+gDiff+'天没记录');
+    tasks.push({icon:'📏', text:'该记录身高体重了（'+gText+'）', act:gDiff>=999?'去记录':'›', tab:'growth', done:false});
+  }
 
   // ④ 启蒙任务
   var tTasks = todayTasks();
@@ -5327,13 +5299,8 @@ function callDeepSeek(key, messages, onOk, onErr){
   }).catch(function(e){ onErr(e.message); });
 }
 
-window.openAIChat = function(){
-  document.getElementById('aiModal').classList.add('show');
-  setTimeout(function(){ document.getElementById('aiInput').focus(); }, 100);
-};
-window.closeAIChat = function(){
-  document.getElementById('aiModal').classList.remove('show');
-};
+window.openAIChat = function(){ switchTab('ai'); };
+window.closeAIChat = function(){};
 
 function aiAppend(area, role, text){
   var div = document.createElement('div');
@@ -5356,18 +5323,9 @@ function aiTyping(area, on){
     t.remove();
   }
 }
-window.aiAsk = function(q){
-  document.getElementById('aiInput').value = q;
-  aiSend();
-};
 window.aiAsk2 = function(q){
   document.getElementById('aiInput2').value = q;
   aiSend2();
-};
-window.aiSend = function(){
-  var input = document.getElementById('aiInput');
-  var area = document.getElementById('aiMsgArea');
-  aiSendCore(input, area);
 };
 window.aiSend2 = function(){
   var input = document.getElementById('aiInput2');
@@ -5538,8 +5496,17 @@ function ghApi(method, path, body){
     }
   };
   if(body) opt.body = JSON.stringify(body);
+  // 带超时（30s）的 fetch，避免手机网络卡死
+  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  if(ctrl) opt.signal = ctrl.signal;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 30000) : null;
   return fetch(url, opt).then(function(r){
     return r.json().then(function(j){ return {ok: r.ok, j: j}; });
+  }).catch(function(e){
+    throw new Error('网络错误：' + (e && e.name === 'AbortError' ? '连接超时，请检查网络后重试' : (e.message || '未知错误')));
+  }).then(function(r){
+    if(timer) clearTimeout(timer);
+    return r;
   });
 }
 
@@ -5575,6 +5542,7 @@ function doSync(force){
           unpackAll(remote);
           syncState.lastSync = new Date().toLocaleString();
           saveSyncState();
+          updateSyncUI();
           refreshAll();
           return 'down';
         }else if(localT > remoteT){
