@@ -89,7 +89,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
   background:var(--bg)}
 #panel-ai.active{display:flex;animation:none}
 @media (max-width:480px){
-  #panel-ai{left:64px}
+  #panel-ai{left:64px;right:env(safe-area-inset-right, 0px);padding-right:calc(12px + env(safe-area-inset-right, 0px))}
 }
 #panel-ai .ai-hero{flex-shrink:0}
 #panel-ai .ai-report-grid{flex-shrink:0}
@@ -413,6 +413,13 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 .ai-quick button:active{background:var(--blue-light);color:var(--blue)}
 .ai-input-row{display:flex;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--border);flex-shrink:0}
 .ai-input-row input{flex:1;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:16px;background:var(--bg);min-height:44px}
+/* 发送按钮：紧凑 + 右侧安全边距（iPhone 刘海/圆角屏不被遮挡） */
+.ai-send-btn{min-width:52px;min-height:44px;background:var(--purple);color:#fff;border-radius:12px;font-size:13px;font-weight:700;flex-shrink:0;padding:0 12px}
+@media (max-width:480px){
+  .ai-input-row{padding-right:calc(12px + env(safe-area-inset-right, 0px))}
+  .ai-input-row input{flex:0 1 60%;min-width:0;padding:10px 10px;font-size:16px}
+  .ai-send-btn{min-width:48px;padding:0 8px;margin-right:2px}
+}
 
 /* ===== Baby Switch ===== */
 .baby-row{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;transition:transform .1s}
@@ -922,7 +929,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       <div class="ai-input-row">
         <button class="ai-mic" id="aiMic2" onclick="aiVoiceInput2()" title="语音输入">🎤</button>
         <input id="aiInput2" placeholder="输入或语音输入你的问题…" onkeydown="if(event.key==='Enter')aiSend2()">
-        <button onclick="aiSend2()" style="min-width:52px;min-height:44px;background:var(--purple);color:#fff;border-radius:12px;font-size:13px;font-weight:700">发送</button>
+        <button class="ai-send-btn" onclick="aiSend2()">发送</button>
       </div>
     </div>
   </section>
@@ -1304,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.7';
+var APP_VERSION = '5.1.8';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5433,7 +5440,7 @@ function aiSendCore(input, area){
   });
 };
 
-/* ===== AI 语音输入 ===== */
+/* ===== AI 语音输入（微信式交互：点按→正在听→识别结果填入→自动发送） ===== */
 var aiSR = null;
 window.aiVoiceInput2 = function(){
   var mic = document.getElementById('aiMic2');
@@ -5444,6 +5451,9 @@ window.aiVoiceInput2 = function(){
   }
   if(aiSR && aiSR.listening){
     aiSR.stop();
+    mic.textContent = '🎤';
+    mic.classList.remove('listening');
+    input.placeholder = '输入或语音输入你的问题…';
     return;
   }
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -5454,21 +5464,29 @@ window.aiVoiceInput2 = function(){
   aiSR.onstart = function(){
     mic.textContent = '🔴';
     mic.classList.add('listening');
-    toast('🎤 请说…');
+    input.placeholder = '🎤 正在听…请说话';
+    input.focus();
+    toast('🎤 正在听，请说问题…（再点🎤停止）');
   };
   aiSR.onresult = function(e){
     var txt = e.results[0][0].transcript;
     input.value = txt;
+    input.placeholder = '输入或语音输入你的问题…';
+    mic.textContent = '🎤';
+    mic.classList.remove('listening');
+    toast('✅ 识别到：' + txt.slice(0, 20));
     aiSend2();
   };
   aiSR.onerror = function(e){
     mic.textContent = '🎤';
     mic.classList.remove('listening');
-    toast('❌ 识别失败：' + (e.error||'未知错误') + '（iPhone可用键盘🎤听写）');
+    input.placeholder = '输入或语音输入你的问题…';
+    toast('❌ 没听清：' + (e.error||'未知错误') + '，请再点🎤说一次');
   };
   aiSR.onend = function(){
     mic.textContent = '🎤';
     mic.classList.remove('listening');
+    if(!input.value) input.placeholder = '输入或语音输入你的问题…';
   };
   aiSR.start();
 };
