@@ -1266,7 +1266,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
         <span id="syncStatus" style="font-size:11px;color:var(--text-faint)">未开启</span>
       </div>
       <div style="font-size:11.5px;color:var(--text-sub);line-height:1.5">开启后，记录自动同步到云端。家人手机填同一个 Token 即可共享同一份数据（老婆记录→你打开自动更新）。</div>
-      <input id="setSyncToken" type="password" placeholder="GitHub Token（ghp_...）" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;background:var(--bg)" oninput="saveSyncToken(this.value)">
+      <input id="setSyncToken" type="password" placeholder="GitHub Token（gh...）" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;background:var(--bg)" oninput="saveSyncToken(this.value)">
       <div style="display:flex;gap:8px">
         <label class="btn-primary" style="flex:1;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--blue);box-shadow:0 4px 12px rgba(74,154,232,.3);min-height:42px">☁️ 开启同步
           <input type="checkbox" id="setSyncOn" style="display:none" onchange="toggleSync(this.checked)">
@@ -5542,6 +5542,20 @@ function ghApi(method, path, body){
 }
 
 /* 核心同步：返回 'up'（已上传）/ 'down'（已拉取）/ 'same'（一致） */
+function countLocalRecords(){
+  // 统计本地实际记录条数（判断是否全新空数据）
+  var meta = DB.getMeta();
+  var n = 0;
+  if(meta && meta.babies){
+    meta.babies.forEach(function(b){
+      ['feeds','sleeps','growth','checks','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'].forEach(function(k){
+        var v = DB._get(b.id+'_'+k, null);
+        if(v && typeof v === 'object') n += Array.isArray(v) ? v.length : Object.keys(v).length;
+      });
+    });
+  }
+  return n;
+}
 function doSync(force){
   if(!syncState.token) return Promise.reject(new Error('未配置 Token'));
   var local = packAll();
@@ -5552,8 +5566,10 @@ function doSync(force){
         var remote = JSON.parse(atob(res.j.content.replace(/\n/g,'')));
         var localT = new Date(local.syncedAt).getTime();
         var remoteT = new Date(remote.syncedAt || 0).getTime();
-        if(remoteT > localT){
-          // 远端更新 → 拉取
+        // 本地全新空数据（无任何记录）时，不覆盖远端，直接拉取
+        var localEmpty = countLocalRecords() === 0;
+        if(remoteT > localT || (localEmpty && !force)){
+          // 远端更新 或 本地是空数据 → 拉取
           unpackAll(remote);
           syncState.lastSync = new Date().toLocaleString();
           saveSyncState();
