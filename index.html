@@ -445,6 +445,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 /* ===== Knowledge Tab ===== */
 .knowledge-item{display:flex;gap:10px;padding:12px 4px;border-bottom:1px solid var(--border)}
+.knowledge-more{font-size:11px;color:var(--blue);margin-top:4px;font-weight:600}
 .feed-stage-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:14px;background:linear-gradient(135deg,var(--green-light),var(--blue-light));margin-bottom:14px}
 .fs-icon{font-size:30px}
 .fs-title{font-size:15px;font-weight:800;color:var(--text)}
@@ -836,6 +837,20 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     </div>
   </section>
 
+  <!-- ===== 知识详情 Modal ===== -->
+  <div class="modal-mask" id="knowledgeDetailModal">
+    <div class="modal" style="max-width:520px">
+      <button class="modal-close" onclick="closeKnowledgeDetail()">✕</button>
+      <div class="modal-title" id="kdTitle"></div>
+      <div style="display:flex;gap:6px;margin:2px 0 12px">
+        <span id="kdTag" style="font-size:11px;color:#fff;padding:2px 10px;border-radius:8px;font-weight:600"></span>
+        <span style="font-size:11px;color:var(--text-faint)">育儿小贴士</span>
+      </div>
+      <div id="kdDesc" style="font-size:15px;line-height:1.8;color:var(--text);margin-bottom:16px"></div>
+      <div style="background:var(--bg);border-radius:12px;padding:14px;font-size:13px;line-height:2;color:var(--text-sub)" id="kdTips"></div>
+    </div>
+  </div>
+
   <!-- ===== Tab: 儿保 ===== -->
   <section class="tab-panel" id="panel-exam">
     <div class="card">
@@ -957,7 +972,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>设置</span>
     </button>
-    <div class="side-version">v4.9</div>
+    <div class="side-version">v5.0.5</div>
   </div>
 </nav>
 
@@ -4631,15 +4646,49 @@ function renderKnowledge(){
   else feedStage = '<div class="feed-stage-card"><div class="fs-icon">🥢</div><div class="fs-info"><div class="fs-title">喂养阶段：家庭饮食期</div><div class="fs-desc">'+ageMon+'个月 · 与家人同餐，少盐少油，鼓励自主进食，奶量300-400ml或纯奶替代</div></div></div>';
   var items = KNOWLEDGE_STAGES[key] || [];
   var html = feedStage;
-  items.forEach(function(k){
-    html += '<div class="knowledge-item">'+
+  items.forEach(function(k, idx){
+    html += '<div class="knowledge-item" onclick="openKnowledgeDetail('+idx+')" style="cursor:pointer">'+
       '<div class="knowledge-tag" style="background:'+tagColor(k.tag)+'">'+k.tag+'</div>'+
       '<div class="knowledge-body"><div class="knowledge-title">'+k.t+'</div>'+
-      '<div class="knowledge-desc">'+k.d+'</div></div>'+
+      '<div class="knowledge-desc">'+k.d+'</div>'+
+      '<div class="knowledge-more">点击查看详情 ›</div></div>'+
     '</div>';
   });
   document.getElementById('knowledgeList').innerHTML = html || '<div class="feed-empty">暂无内容</div>';
+  window.__knowledgeStageKey = key;
 }
+window.openKnowledgeDetail = function(idx){
+  var key = window.__knowledgeStageKey || '3-6';
+  var items = KNOWLEDGE_STAGES[key] || [];
+  var k = items[idx];
+  if(!k) return;
+  // 详情内容：标题/分类/完整描述 + 通用育儿小贴士
+  var tips = {
+    '运动':'• 每天保证充足的大运动时间<br>• 在安全环境里练习，家长全程看护<br>• 运动后及时补充水分和休息',
+    '视觉':'• 追视训练从近到远，每次不超过5分钟<br>• 光线要柔和，避免强光直射眼睛<br>• 结合黑白卡→彩色卡循序渐进',
+    '精细':'• 精细动作练习要循序渐进<br>• 玩具选择安全、无小零件<br>• 每次练习后表扬鼓励',
+    '语言':'• 多和宝宝说话，语速放慢、表情夸张<br>• 宝宝发声时积极回应<br>• 亲子阅读是语言发展的好帮手',
+    '睡眠':'• 建立固定的睡前仪式（洗澡→按摩→讲故事）<br>• 睡眠环境保持安静、温度适宜<br>• 白天多运动有助于夜间睡眠',
+    '喂养':'• 规律喂养，观察宝宝的饥饱信号<br>• 新食物逐一添加，观察过敏反应<br>• 不强迫进食，尊重宝宝意愿',
+    '护理':'• 保持皮肤清洁干燥，预防皮疹<br>• 勤剪指甲防抓伤<br>• 用品定期消毒',
+    '心理':'• 给宝宝足够的安全感和陪伴<br>• 情绪平稳，不轻易焦虑<br>• 尊重宝宝的发展节奏',
+    '社交':'• 多带宝宝接触不同的人和环境<br>• 家长以身作则示范礼貌行为<br>• 鼓励宝宝表达和分享',
+    '认知':'• 通过游戏和日常互动促进认知<br>• 多问开放性问题引导思考<br>• 保护好奇心，鼓励探索',
+    '安全':'• 居家环境全面安全检查<br>• 危险物品（药品/刀具/插座）远离宝宝<br>• 看护时不离视线',
+    '自理':'• 多给机会自己尝试，不代劳<br>• 耐心等待，不催促<br>• 成功后及时鼓励',
+    '创意':'• 提供安全的创作工具（蜡笔/颜料）<br>• 不纠正作品，多鼓励表达<br>• 保护想象力和创造力'
+  };
+  var tip = tips[k.tag] || '';
+  document.getElementById('kdTitle').textContent = k.t;
+  document.getElementById('kdTag').textContent = k.tag;
+  document.getElementById('kdTag').style.background = tagColor(k.tag);
+  document.getElementById('kdDesc').innerHTML = k.d;
+  document.getElementById('kdTips').innerHTML = tip;
+  document.getElementById('knowledgeDetailModal').classList.add('show');
+}
+window.closeKnowledgeDetail = function(){
+  document.getElementById('knowledgeDetailModal').classList.remove('show');
+};
 function tagColor(tag){
   var map = {'运动':'#4A9AE8','视觉':'#7B5FA0','精细':'#E8A300','语言':'#34B37E','睡眠':'#F08BAE','喂养':'#E0709A','护理':'#34B37E','心理':'#7B5FA0','社交':'#4A9AE8','认知':'#E8A300','安全':'#E0709A','自理':'#34B37E','创意':'#7B5FA0'};
   return map[tag] || '#999';
@@ -4969,7 +5018,7 @@ window.closeBabySwitch = function(){
   document.getElementById('babyModal').classList.remove('show');
 };
 
-function renderBabyList(){
+window.renderBabyList = function(){
   var meta = DB.getMeta();
   var box = document.getElementById('babyListBox');
   if(!meta || !meta.babies.length){
