@@ -93,9 +93,17 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 #panel-ai .ai-quick{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;overflow-x:auto}
 #panel-ai .ai-quick button{flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--blue-light);color:var(--blue);font-size:12.5px;font-weight:700;min-height:38px}
 @media (max-width:480px){
-  #panel-ai{height:calc(100vh - 72px)}
+  #panel-ai{height:calc(100dvh - 72px)}
   #panel-ai .ai-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:visible}
   #panel-ai .ai-quick button{width:100%}
+  /* 手机端压缩顶部说明，让输入框一进去就可见 */
+  #panel-ai .ai-hero{padding:10px 12px}
+  #panel-ai .ai-hero-title{font-size:15px}
+  #panel-ai .ai-hero-sub{font-size:11px}
+  #panel-ai .ai-report-grid{margin:0 0 6px}
+  #panel-ai .ai-report-btn{padding:8px 6px}
+  #panel-ai .arb-icon{font-size:18px}
+  #panel-ai .arb-title{font-size:11px}
 }
 #panel-ai .ai-input-row{flex-shrink:0;padding:10px 14px 14px;border-top:1px solid var(--border);display:flex;gap:8px}
 .tab-panel.active{display:block;animation:fadeIn .18s ease}
@@ -400,7 +408,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 .ai-quick button{flex-shrink:0;background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--text-sub);min-height:36px}
 .ai-quick button:active{background:var(--blue-light);color:var(--blue)}
 .ai-input-row{display:flex;gap:8px;padding:10px 16px 14px;border-top:1px solid var(--border);flex-shrink:0}
-.ai-input-row input{flex:1;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:14px;background:var(--bg);min-height:44px}
+.ai-input-row input{flex:1;border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:16px;background:var(--bg);min-height:44px}
 
 /* ===== Baby Switch ===== */
 .baby-row{display:flex;align-items:center;gap:10px;padding:12px 10px;border-radius:12px;border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;transition:transform .1s}
@@ -972,7 +980,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       <span>设置</span>
     </button>
-    <div class="side-version">v5.0.5</div>
+    <div class="side-version" id="sideVersion"></div>
   </div>
 </nav>
 
@@ -1290,6 +1298,13 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 <script>
 (function(){
 'use strict';
+
+/* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
+var APP_VERSION = '5.1.1';
+function renderVersion(){
+  var el = document.getElementById('sideVersion');
+  if(el) el.textContent = 'v' + APP_VERSION;
+}
 
 /* =====================================================================
  * 数据层（Data Layer）
@@ -1762,7 +1777,14 @@ window.switchTab = function(tab){
   if(tab==='insurance'){ renderInsurance(); }
   if(tab==='vaccine'){ renderVaccines(); renderVaccineRec(); }
   if(tab==='knowledge') renderKnowledge();
-  if(tab==='ai') renderAIQuick();
+  if(tab==='ai'){
+    renderAIQuick();
+    // 切到 AI 立即把输入框滚进视野（手机端）
+    setTimeout(function(){
+      var inp = document.getElementById('aiInput2');
+      if(inp && inp.scrollIntoView) inp.scrollIntoView({block:'nearest'});
+    }, 60);
+  }
   window.scrollTo(0,0);
 };
 
@@ -5751,6 +5773,7 @@ function autoRepairGarbled(){
 function init(){
   initBaby();
   applyTheme();
+  renderVersion();
   // 先检测修复乱码（同步前，避免把乱码上传覆盖云端）
   if(detectGarbledLocal()){
     // 乱码：清空本地 + 拉云端 → 修复完成后再完整渲染
