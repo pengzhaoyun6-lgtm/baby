@@ -83,9 +83,13 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 /* ===== Tabs ===== */
 .tab-panel{display:none;padding:14px 14px 20px;max-width:640px;margin:0 auto}
-/* AI Tab 撑满视口，聊天区弹性伸缩，下半截不空 */
-#panel-ai{display:none;max-width:720px;height:calc(100vh - 60px);flex-direction:column}
+/* AI Tab 撑满视口（绝对定位铺满，输入框/发送按钮永远完整可见） */
+#panel-ai{display:none;max-width:720px;flex-direction:column;
+  position:fixed;left:72px;right:0;top:0;bottom:0;height:auto;margin:0;padding:14px 14px 10px;z-index:50}
 #panel-ai.active{display:flex}
+@media (max-width:480px){
+  #panel-ai{left:64px}
+}
 #panel-ai .ai-hero{flex-shrink:0}
 #panel-ai .ai-report-grid{flex-shrink:0}
 #panel-ai .ai-chat-box{flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:0}
@@ -93,7 +97,6 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 #panel-ai .ai-quick{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;overflow-x:auto}
 #panel-ai .ai-quick button{flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--blue-light);color:var(--blue);font-size:12.5px;font-weight:700;min-height:38px}
 @media (max-width:480px){
-  #panel-ai{height:calc(100dvh - 72px)}
   #panel-ai .ai-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:visible}
   #panel-ai .ai-quick button{width:100%}
   /* 手机端压缩顶部说明，让输入框一进去就可见 */
@@ -1300,7 +1303,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.2';
+var APP_VERSION = '5.1.3';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
