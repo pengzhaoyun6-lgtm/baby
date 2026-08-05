@@ -472,6 +472,8 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 /* ===== Exam / Med / Insurance ===== */
 .exam-plan-item{display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.exam-plan-item.clickable{cursor:pointer;transition:background .12s}
+.exam-plan-item.clickable:active{background:var(--blue-light);border-radius:8px}
 .exam-plan-item:last-child{border-bottom:none}
 .plan-name{font-size:14px;font-weight:700}
 .plan-note{font-size:12px;color:var(--text-sub);width:100%;padding-left:0}
@@ -1311,7 +1313,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.1.9';
+var APP_VERSION = '5.2.0';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -4171,20 +4173,22 @@ function renderExamPlan(){
   var exams = DB.getExams();
   var html = '';
   EXAM_SCHEDULE.forEach(function(p){
-    // 已做过（按体检记录日期≈月龄模糊匹配：记录存在且月龄接近）
+    // 已做过：有体检记录且记录了体检类型（note 含计划名）→ 精确匹配
     var done = exams.some(function(e){
-      if(!e.date || !baby.birthday) return false;
-      var eMon = monthDiff(new Date(baby.birthday), new Date(e.date));
-      return Math.abs(eMon - p.ageMon) <= 1.5;
+      if(e.note && e.note.indexOf(p.name) >= 0) return true;
+      return false;
     });
     var due = ageMon!==null && ageMon >= p.ageMon && ageMon < p.ageMon + 3;
     var overdue = ageMon!==null && ageMon >= p.ageMon + 3 && !done;
     var cls = done ? 'plan done' : (overdue ? 'plan overdue' : (due ? 'plan due' : 'plan wait'));
     var badge = done ? '✓ 已完成'
-      : (overdue ? '⏰ 已过时间！'
+      : (overdue ? '⏰ 已过时间！点此补录'
       : (due ? '⏰ 该体检了'
       : (ageMon!==null && ageMon < p.ageMon ? '还有' + Math.round(p.ageMon - ageMon) + '个月' : '待进行')));
-    html += '<div class="exam-plan-item '+cls+'">'+
+    // 可点击：已做/该做/已过 → 点开记录（补录）；未到时间的只显示
+    var clickable = done || due || overdue;
+    html += '<div class="exam-plan-item '+cls+(clickable?' clickable':'')+'" '+
+      (clickable ? 'onclick="openExamSheetFor(\''+p.name+'\','+p.ageMon+')"' : '') + '>'+
       '<div class="plan-name">'+(p.ageMon===0?'出生':p.ageMon+'个月')+' · '+p.name+'</div>'+
       '<div class="plan-note">'+p.note+'</div>'+
       '<div class="plan-badge">'+badge+'</div>'+
@@ -4244,6 +4248,17 @@ window.openExamSheet = function(){
   document.getElementById('examNote').value = '';
   document.getElementById('examSheet').classList.add('show');
 };
+/* 从体检计划点击进入：自动带出计划名+月龄 */
+window.openExamSheetFor = function(name, ageMon){
+  document.getElementById('examDate').value = todayStr();
+  document.getElementById('examAge').value = ageMon + '个月';
+  document.getElementById('examWeight').value = '';
+  document.getElementById('examHeight').value = '';
+  document.getElementById('examHead').value = '';
+  document.getElementById('examNote').value = '体检类型：' + name;
+  document.getElementById('examSheet').classList.add('show');
+  toast('📋 记录「' + name + '」体检结果');
+};
 window.closeExamSheet = function(){
   document.getElementById('examSheet').classList.remove('show');
 };
@@ -4262,11 +4277,14 @@ window.saveExam = function(){
   DB.setExams(exams);
   document.getElementById('examSheet').classList.remove('show');
   renderExams();
+  renderExamPlan();
+  renderHome();
   toast('🏥 体检已记录');
 };
 window.delExam = function(id){
   DB.setExams(DB.getExams().filter(function(x){ return x.id!==id; }));
   renderExams();
+  renderExamPlan();
 };
 
 function renderMeds(){
