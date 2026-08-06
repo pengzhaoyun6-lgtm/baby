@@ -1201,9 +1201,11 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       </select>
     </div>
     <div class="field"><label>保额 (选填)</label><input id="insAmount" placeholder="如：200万"></div>
+    <div class="field"><label>保费 (选填)</label><input id="insPremium" placeholder="如：360元/年"></div>
     <div class="field"><label>购买时间</label><input type="date" id="insPurchase"></div>
     <div class="field"><label>保障期限至</label><input type="date" id="insExpiry"></div>
     <div class="field"><label>年缴费日（到期提醒用）</label><input type="date" id="insDue"></div>
+    <div class="field"><label>理赔电话 (选填)</label><input id="insPhone" placeholder="如：95511"></div>
     <div class="field"><label>备注 (选填)</label><input id="insNote" placeholder="如：年缴3000元"></div>
     <button class="btn-big purple" onclick="saveInsurance()">✓ 保存</button>
     <button class="btn-ghost" onclick="closeInsForm()">取消</button>
@@ -1323,7 +1325,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.8';
+var APP_VERSION = '5.3.9';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -4501,6 +4503,7 @@ var DEFAULT_INSURANCES = [
     name: '无忧保·少儿综合意外险（幼儿加强版）',
     type: '意外',
     amount: '意外身故/伤残20万；意外医疗12万（0免赔100%赔，每次事故限额2万）',
+    premium: '360元/年',
     purchase: '2026-07-01',
     expiry: '2027-06-30',
     due: '2026-07-01',
@@ -4514,6 +4517,7 @@ var DEFAULT_INSURANCES = [
     name: '关爱e生2.0少儿长期医疗保险',
     type: '医疗',
     amount: '年度保额400万；保证续保期间累计800万',
+    premium: '772元/年',
     purchase: '2026-06-29',
     expiry: '2027-06-29',
     due: '2026-06-29',
@@ -4527,6 +4531,7 @@ var DEFAULT_INSURANCES = [
     name: '特定疾病2.0门急诊医疗保险',
     type: '医疗',
     amount: '年度保额5万',
+    premium: '54元/年',
     purchase: '2026-06-29',
     expiry: '2027-06-29',
     due: '2026-06-29',
@@ -4540,6 +4545,7 @@ var DEFAULT_INSURANCES = [
     name: '少儿外购药械费用医疗保险',
     type: '医疗',
     amount: '年度保额100万',
+    premium: '27元/年',
     purchase: '2026-06-29',
     expiry: '2027-06-29',
     due: '2026-06-29',
@@ -4549,13 +4555,23 @@ var DEFAULT_INSURANCES = [
     doc: '# 少儿外购药械费用医疗保险\n保险公司：人保寿险｜保单号：017928991451158｜保费：27元/年\n保障期间：2026.06.29~2027.06.29｜续保：不保证续保\n报案电话：95518转寿险\n\n## 保障责任\n- 年度保额：100万/年\n- 赔付比例：使用社保100%；未用社保（社保目录内）90%\n- 免赔额：无\n\n## 覆盖范围\n- 住院期间外购药品及器械\n- 特殊门诊外购药品及器械\n- 门诊手术外购药品及器械\n- 住院前后45天门急诊外购药品及器械\n\n## 等待期\n90天（2026.09.27后生效）\n\n## 免责\n含遗传性疾病免责条款。\n\n## 适用场景\n医生开外购药/器械（需凭医生处方在医院外购买）。'
   }
 ];
-/* 首次打开自动填充默认保单（有记录不覆盖；用户删除后不再自动出现） */
+/* 首次打开自动填充默认保单；已有保单时合并补齐缺失的默认保单（修复只显示1份问题） */
 function seedDefaultInsurances(){
   try{
-    if(localStorage.getItem('wbb2_ins_seeded')) return;  // 已初始化过（含用户删除过）
-    var inss = DB.getInsurances();
-    if(!inss || !inss.length){
-      DB.setInsurances(DEFAULT_INSURANCES.slice());
+    var inss = DB.getInsurances() || [];
+    var existingIds = {};
+    var existingNames = {};
+    inss.forEach(function(x){ if(x.id) existingIds[x.id]=1; if(x.name) existingNames[x.name]=1; });
+    var added = 0;
+    DEFAULT_INSURANCES.forEach(function(def){
+      // 已存在（同 id 或同名）则跳过；否则补齐
+      if(existingIds[def.id]) return;
+      if(existingNames[def.name]) return;
+      inss.push(def);
+      added++;
+    });
+    if(added){
+      DB.setInsurances(inss);
     }
     localStorage.setItem('wbb2_ins_seeded', '1');
   }catch(e){}
@@ -4571,12 +4587,12 @@ function renderInsurance(){
   var td = todayStr();
   var html = '';
   inss.slice().reverse().forEach(function(ins){  // 最新的保单在最上
+    var now = new Date();
     // 缴费提醒状态
     var dueTxt = '';
     var warn = false;
     if(ins.due){
       var due = new Date(ins.due);
-      var now = new Date();
       // 计算下一次缴费日（今年或明年）
       var next = new Date(now.getFullYear(), due.getMonth(), due.getDate());
       if(next < now) next = new Date(now.getFullYear()+1, due.getMonth(), due.getDate());
@@ -4605,18 +4621,31 @@ function renderInsurance(){
     if(ins.doc){
       docHtml = '<div class="ins-doc"><div class="ins-doc-head" onclick="this.parentNode.classList.toggle(\'open\')">📄 保单文档 <span style="margin-left:auto;font-size:11px;color:var(--text-faint)">点击展开/收起</span></div><div class="ins-doc-body"><pre>'+ins.doc.slice(0,2000)+(ins.doc.length>2000?'\n…(截断)':'')+'</pre></div></div>';
     }
-    html += '<div class="ins-item'+(warn||expWarn?' warn':'')+'">'+
-      '<div class="ins-top">'+
-        '<span class="ins-type '+tc+'">'+(ins.type||'保险')+'</span>'+
-        '<span class="ins-name">'+(ins.name||'')+'</span>'+
+    // 续保提醒（到期前30天）
+    var renewTxt = '';
+    if(ins.expiry){
+      var expD2 = new Date(ins.expiry);
+      var renewDays = Math.round((expD2-now)/86400000);
+      if(renewDays >= 0 && renewDays <= 30) renewTxt = '⏳ '+renewDays+'天后到期，记得续保';
+    }
+    html += '<div class="ins-item'+(warn||expWarn?' warn':'')+'" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+      '<div class="ins-top" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
+        '<span class="ins-type '+tc+'" style="padding:2px 10px;border-radius:8px;font-size:11.5px;font-weight:700">'+(ins.type||'保险')+'</span>'+
+        '<span class="ins-name" style="flex:1;font-weight:700;font-size:14px">'+(ins.name||'')+'</span>'+
         '<button class="exam-del" onclick="delInsurance(\''+ins.id+'\')">✕</button>'+
       '</div>'+
-      '<div class="ins-meta">'+
-        (ins.purchase?'<span>📅 购买 '+ins.purchase+'</span>':'')+
-        (ins.amount?'<span>💰 保额 '+ins.amount+'</span>':'')+
-        (dueTxt?'<span class="'+(warn?'ins-due-warn':'')+'">'+dueTxt+'</span>':'')+
-        (expTxt?'<span class="'+(expWarn?'ins-due-warn':'')+'">'+expTxt+'</span>':'')+
-        (ins.note?'<span>📝 '+ins.note+'</span>':'')+
+      '<div class="ins-meta" style="display:flex;flex-direction:column;gap:5px;font-size:12.5px">'+
+        '<div style="display:flex;flex-wrap:wrap;gap:4px 14px">'+
+          (ins.purchase?'<span>📅 购买 '+ins.purchase+'</span>':'')+
+          (ins.expiry?'<span>⌛ 失效 '+ins.expiry+'</span>':'')+
+          (ins.premium?'<span>💵 保费 '+ins.premium+'</span>':'')+
+        '</div>'+
+        (ins.amount?'<div>💰 保额：'+ins.amount+'</div>':'')+
+        (ins.phone?'<div style="display:flex;align-items:center;gap:6px;margin-top:2px"><span style="background:var(--blue-light);color:var(--blue);padding:2px 10px;border-radius:8px;font-weight:700">📞 '+ins.phone+'</span><span style="color:var(--text-faint);font-size:11.5px">理赔/咨询电话</span></div>':'')+
+        (dueTxt?'<div class="'+(warn?'ins-due-warn':'')+'">'+dueTxt+'</div>':'')+
+        (renewTxt?'<div style="color:var(--danger,#E0709A);font-weight:700">'+renewTxt+'</div>':'')+
+        (expTxt?'<div class="'+(expWarn?'ins-due-warn':'')+'">'+expTxt+'</div>':'')+
+        (ins.note?'<div style="color:var(--text-sub)">📝 '+ins.note+'</div>':'')+
       '</div>'+
       docHtml+
     '</div>';
@@ -4627,9 +4656,11 @@ window.openInsForm = function(){
   document.getElementById('insName').value = '';
   document.getElementById('insType').value = '';
   document.getElementById('insAmount').value = '';
+  document.getElementById('insPremium').value = '';
   document.getElementById('insPurchase').value = '';
   document.getElementById('insDue').value = '';
   document.getElementById('insExpiry').value = '';
+  document.getElementById('insPhone').value = '';
   document.getElementById('insNote').value = '';
   document.getElementById('insDoc').value = '';
   document.getElementById('insDocStatus').textContent = '上传或粘贴保单内容后点「智能识别」自动填表';
@@ -4737,9 +4768,11 @@ function fillInsForm(data){
   var nameEl = document.getElementById('insName');
   var typeEl = document.getElementById('insType');
   var amountEl = document.getElementById('insAmount');
+  var premiumEl = document.getElementById('insPremium');
   var purEl = document.getElementById('insPurchase');
   var expEl = document.getElementById('insExpiry');
   var dueEl = document.getElementById('insDue');
+  var phoneEl = document.getElementById('insPhone');
   var noteEl = document.getElementById('insNote');
   if(data.name && !nameEl.value) nameEl.value = data.name;
   if(data.type){
@@ -4748,11 +4781,12 @@ function fillInsForm(data){
     if(match) typeEl.value = match;
   }
   if(data.amount && !amountEl.value) amountEl.value = data.amount;
+  if(data.premium && !premiumEl.value) premiumEl.value = data.premium;
   if(data.purchaseDate) purEl.value = data.purchaseDate;
   if(data.expiryDate) expEl.value = data.expiryDate;
   if(data.dueDate) dueEl.value = data.dueDate;
-  if(data.phone && !noteEl.value) noteEl.value = '理赔电话：' + data.phone;
-  else if(data.phone) noteEl.value += '；理赔电话：' + data.phone;
+  if(data.phone) phoneEl.value = data.phone;
+  if(data.note && !noteEl.value) noteEl.value = data.note;
   document.getElementById('insDocStatus').textContent = '✅ 识别完成，已自动填表，请确认后保存';
   toast('🤖 已识别保单信息，自动填表完成');
 }
@@ -4764,9 +4798,11 @@ window.saveInsurance = function(){
     id: uid(), name: name,
     type: document.getElementById('insType').value,
     amount: document.getElementById('insAmount').value.trim(),
+    premium: document.getElementById('insPremium').value.trim(),
     purchase: document.getElementById('insPurchase').value,
     due: document.getElementById('insDue').value,
     expiry: document.getElementById('insExpiry').value,
+    phone: document.getElementById('insPhone').value.trim(),
     note: document.getElementById('insNote').value.trim(),
     doc: document.getElementById('insDoc').value.trim()
   });
@@ -5733,6 +5769,185 @@ function applyDocRecords(data){
   }
 }
 
+/* ============ 🤖 AI 万能录入：对话识别的全模块入库 ============
+ * 覆盖：喂奶/睡眠/生长/大小便/维生素/体检/疫苗/用药/过敏/异常/启蒙打卡/里程碑/保险 */
+function applyUniversalRecords(rec){
+  var baby = DB.getBaby();
+  var done = [];
+  var now = new Date();
+
+  // 🍼 喂奶
+  (rec.feeds||[]).forEach(function(f){
+    var feeds = DB.getFeeds();
+    feeds.push({ id: uid(), ts: now.toISOString(), type:'bottle', side:'', value: f.value||0, unit:'ml', note: f.note||'', recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setFeeds(feeds);
+    done.push('喂奶'+(f.value||'')+'ml');
+  });
+
+  // 🌙 睡眠
+  (rec.sleeps||[]).forEach(function(s){
+    var sleeps = DB.getSleeps();
+    var today = todayStr();
+    var date = s.date || today;
+    // 夜间睡眠：跨天时 start 昨天、end 今天；同天直接存
+    var rec2 = { id: uid(), date: date, start: s.start||'', end: s.end||'', note: s.note||'' };
+    // 如果 start > end（跨夜），end 记为次日
+    if(rec2.start && rec2.end && rec2.start > rec2.end){
+      var d = new Date(date); d.setDate(d.getDate()+1);
+      rec2.date = dateStr(d);  // end 那天
+    }
+    sleeps.push(rec2);
+    DB.setSleeps(sleeps);
+    done.push('睡眠'+(s.start||'')+'-'+(s.end||''));
+  });
+
+  // 📏 生长（按日期去重，同天更新）
+  (rec.growth||[]).forEach(function(g){
+    var gs = DB.getGrowth();
+    var date = todayStr();
+    var found = false;
+    gs.forEach(function(x){ if(x.date===date){ if(g.weight) x.weight=g.weight; if(g.height) x.height=g.height; if(g.headCirc) x.headCirc=g.headCirc; found=true; } });
+    if(!found){
+      gs.push({ id: uid(), date: date, ageLabel: (baby&&baby.birthday)?(monthDiff(new Date(baby.birthday), now)<1?'不满1个月':monthDiff(new Date(baby.birthday), now)+'个月'):'', weight: g.weight||0, height: g.height||0, headCirc: g.headCirc||0, note: g.note||'' });
+    }
+    DB.setGrowth(gs);
+    var gp = [];
+    if(g.weight) gp.push('体重'+g.weight+'kg');
+    if(g.height) gp.push('身高'+g.height+'cm');
+    if(g.headCirc) gp.push('头围'+g.headCirc+'cm');
+    done.push('生长('+gp.join(' ')+')');
+  });
+
+  // 🚼 大小便
+  (rec.diapers||[]).forEach(function(d){
+    var ds = DB.getDiapers();
+    ds.push({ id: uid(), ts: now.toISOString(), type: d.type==='poop'?'poop':'pee', state: d.type==='poop'?(d.state||'正常'):'', recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setDiapers(ds);
+    done.push(d.type==='poop'?'大便':'小便');
+  });
+
+  // 💊 维生素
+  (rec.vits||[]).forEach(function(v){
+    var vits = DB.getVits();
+    var type = (v.type||'').toUpperCase().indexOf('D3')>=0 ? 'vitD3' : 'vitAD';
+    vits.push({ id: uid(), ts: now.toISOString(), type: type, recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setVits(vits);
+    done.push('维生素'+(type==='vitD3'?'D3':'AD'));
+  });
+
+  // 📋 体检（写入 exams + growth 联动）
+  (rec.exams||[]).forEach(function(e){
+    var es = DB.getExams();
+    var date = e.date || todayStr();
+    if(!es.some(function(x){ return x.date===date; })){
+      es.push({ id: uid(), date: date, ageLabel: e.ageLabel||'', weight: e.weight||0, height: e.height||0, headCirc: e.headCirc||0, note: e.note||'' });
+      DB.setExams(es);
+      var gs = DB.getGrowth();
+      if(!gs.some(function(x){ return x.date===date; }) && (e.weight||e.height||e.headCirc)){
+        gs.push({ id: uid(), date: date, ageLabel: e.ageLabel||'', weight: e.weight||0, height: e.height||0, headCirc: e.headCirc||0, note: '体检' });
+        DB.setGrowth(gs);
+      }
+      done.push('体检'+date);
+    }
+  });
+
+  // 💉 疫苗（匹配 VACCINE_SCHEDULE）
+  (rec.vaccines||[]).forEach(function(v){
+    if(!v.name) return;
+    var rec2 = DB.getVaccines() || {};
+    var matched = null;
+    VACCINE_SCHEDULE.forEach(function(sv){
+      if(matched) return;
+      if(v.name.indexOf(sv.name) >= 0){
+        if(!v.dose || v.dose === sv.dose) matched = sv;
+      }
+    });
+    if(matched && !rec2[matched.id]){
+      rec2[matched.id] = v.date || todayStr();
+      DB.setVaccines(rec2);
+      done.push('疫苗:'+matched.name+(matched.dose||''));
+    }
+  });
+
+  // 💊 用药/就医
+  (rec.meds||[]).forEach(function(m){
+    if(!m.note) return;
+    var ms = DB.getMeds();
+    ms.push({ id: uid(), date: todayStr(), type: m.type||'用药', note: m.note });
+    DB.setMeds(ms);
+    done.push('用药:'+m.note.slice(0,15));
+  });
+
+  // 🌾 过敏史
+  (rec.allergies||[]).forEach(function(a){
+    if(!a.source) return;
+    var as = DB.getAllergies();
+    if(!as.some(function(x){ return x.source===a.source; })){
+      as.push({ id: uid(), date: a.date||todayStr(), source: a.source, type: a.type||'其他', note: a.note||'' });
+      DB.setAllergies(as);
+      done.push('过敏:'+a.source);
+    }
+  });
+
+  // ⚠️ 异常事件
+  (rec.events||[]).forEach(function(ev){
+    if(!ev.type) return;
+    var es = DB.getEvents();
+    es.push({ id: uid(), date: todayStr(), type: ev.type, note: ev.note||'' });
+    DB.setEvents(es);
+    done.push('事件:'+ev.type);
+  });
+
+  // 🎯 启蒙打卡（todayTasks 匹配）
+  (rec.tasks||[]).forEach(function(t){
+    if(!t.name) return;
+    var tasks = todayTasks();
+    tasks.forEach(function(tk){
+      if(tk.name.indexOf(t.name)>=0 || t.name.indexOf(tk.name)>=0){
+        if(!tk.done){ tk.done = true; tk.doneAt = now.toISOString(); done.push('打卡:'+tk.name); }
+      }
+    });
+    localStorage.setItem('wbb2_tasks_' + ((baby&&baby.id)||'default'), JSON.stringify(tasks));
+  });
+
+  // 🏅 里程碑
+  (rec.milestones||[]).forEach(function(ms){
+    if(!ms.name) return;
+    var all = DB.getMilestones() || {};
+    var stage = getStage(MS_STAGES);
+    stage.cats.forEach(function(c){ c.items.forEach(function(it){
+      if(it.name.indexOf(ms.name)>=0 || (ms.name||'').indexOf(it.name)>=0){
+        if(!all[it.id] || all[it.id].status !== 'achieved'){
+          all[it.id] = { status:'achieved', date: todayStr() };
+          done.push('里程碑:'+it.name);
+        }
+      }
+    }); });
+    DB.setMilestones(all);
+  });
+
+  // 🛡️ 保险
+  (rec.inss||[]).forEach(function(ins){
+    if(!ins.name) return;
+    var inss = DB.getInsurances();
+    if(!inss.some(function(x){ return x.name===ins.name; })){
+      inss.push({ id: uid(), name: ins.name, type: ins.type||'', amount: ins.amount||'', purchase: ins.purchase||'', due: ins.due||'', expiry: ins.expiry||'', note: ins.note||'', doc: '' });
+      DB.setInsurances(inss);
+      done.push('保险:'+ins.name.slice(0,12));
+    }
+  });
+
+  // 刷新界面
+  renderFeed(); renderDiapers(); renderVits(); renderSleep(); renderGrowthChart(); renderGrowthList();
+  renderExams(); renderMeds(); renderAllergies(); renderEvents(); renderVaccines(); renderVaccineRec();
+  renderTasks(); renderMilestones(); renderInsurance(); renderHome();
+
+  if(done.length){
+    return '✅ 已记录：' + done.join('、');
+  }
+  return '⚠️ 没有识别到可记录的数据（已按提问处理）';
+}
+
 function aiAppend(area, role, text){
   var div = document.createElement('div');
   div.className = 'ai-msg ' + (role==='user'?'ai-user':'ai-bot');
@@ -5758,6 +5973,94 @@ window.aiAsk2 = function(q){
   document.getElementById('aiInput2').value = q;
   aiSend2();
 };
+/* ===== 🤖 AI 万能录入：对话输入自动识别并写入所有板块 =====
+ * 用户输入 → 判断是"记录"还是"提问"：
+ *   记录（喂奶/睡眠/生长/大小便/维生素/体检/疫苗/用药/过敏/异常/启蒙打卡/里程碑/保险）→ 结构化 JSON → 自动入库
+ *   提问 → 正常 AI 回答
+ * 先本地规则快速识别（免费秒回），识别不了再走 AI */
+var RECORD_KW = /喂|奶|睡|醒|起|体重|身高|头围|尿|便|维生素|维d|维ad|ad|d3|体检|疫苗|接种|打针|过敏|发烧|摔|吐|泻|磕|打卡|完成|里程碑|会翻身|会坐|会爬|保险|保单|药|看医生|就医|量/;
+
+/* 判断是否疑问句/未来计划/否定——这些都不是"记录"，不能入库 */
+function isNonRecord(t){
+  // 疑问：吗/呢/怎么/怎样/如何/为什么/要不要/该不该/能吗/可以吗/？/?
+  if(/吗|呢|怎么|怎样|如何|为什么|要不要|该不该|能不能|可以吗|行不行|？|\?/.test(t)) return true;
+  // 未来计划：明天/后天/下周/准备/打算/计划/要打/该打/预约/想给
+  if(/明天|后天|下周|准备|打算|计划|预约|想给|该打|要打|该吃|要吃/.test(t)) return true;
+  // 否定：没/没有/不/别（如"今天没喂奶"是查询不是记录）
+  if(/没|没有|不|别/.test(t)) return true;
+  return false;
+}
+/* 尝试本地规则识别（快速路径：喂奶/睡眠/生长/大小便/维生素）
+ * 原则：只识别"明确报告已发生动作"的输入；疑问/计划/否定一律不识别（走 AI 判断） */
+function tryLocalRecord(input){
+  var t = input.trim().toLowerCase();
+  if(isNonRecord(t)) return null;  // 疑问/计划/否定 → 不本地记录
+  // 喂奶：X ml / X毫升 / 吃奶 / 喝了X
+  var feedM = t.match(/(?:喂|喝|吃|奶)(?:了|的)?\s*(\d+(?:\.\d+)?)\s*(?:ml|毫升|亳升)/i);
+  if(feedM && /喂|喝|吃|奶/.test(t)) return {type:'feed', value: parseFloat(feedM[1])};
+  // 大小便：拉/尿/便（排除"拉肚子/拉稀"——那是症状不是大小便记录）
+  if(/拉了|尿了|小便|大便|💩|💧/.test(t)){
+    if(/拉了|大便|💩|便/.test(t) && !/拉肚子|拉稀|腹泻/.test(t)) return {type:'poop'};
+    if(/尿了|小便|💧/.test(t)) return {type:'pee'};
+  }
+  // 维生素
+  if(/维生素|维d|维ad|d3|ad/.test(t)) return {type:'vit', text: input};
+  // 生长
+  if(/体重|身高|头围/.test(t)){
+    var w = t.match(/体重(?:是|为|：|:)?\s*(\d+(?:\.\d+)?)/);
+    var h = t.match(/身高(?:是|为|：|:)?\s*(\d+(?:\.\d+)?)/);
+    var hc = t.match(/头围(?:是|为|：|:)?\s*(\d+(?:\.\d+)?)/);
+    if(w || h || hc) return {type:'growth', weight: w?parseFloat(w[1]):null, height: h?parseFloat(h[1]):null, headCirc: hc?parseFloat(hc[1]):null};
+  }
+  return null;
+}
+/* 本地规则快速入库 */
+function applyLocalRecord(rec){
+  var baby = DB.getBaby();
+  var now = new Date();
+  if(rec.type === 'feed'){
+    var feeds = DB.getFeeds();
+    feeds.push({ id: uid(), ts: now.toISOString(), type:'bottle', side:'', value: rec.value, unit:'ml', note:'', recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setFeeds(feeds);
+    renderFeed(); renderHome();
+    return '✅ 已记录喂奶 ' + rec.value + 'ml';
+  }
+  if(rec.type === 'pee' || rec.type === 'poop'){
+    var ds = DB.getDiapers();
+    ds.push({ id: uid(), ts: now.toISOString(), type: rec.type, state: rec.type==='poop'?'正常':'', recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setDiapers(ds);
+    renderDiapers(); renderHome();
+    return '✅ 已记录' + (rec.type==='pee'?'小便':'大便');
+  }
+  if(rec.type === 'vit'){
+    var vits = DB.getVits();
+    var type = /d3/.test((rec.text||'').toLowerCase()) ? 'vitD3' : 'vitAD';
+    vits.push({ id: uid(), ts: now.toISOString(), type: type, recorder: (baby&&baby.recorder)||'妈妈' });
+    DB.setVits(vits);
+    renderVits(); renderHome();
+    return '✅ 已记录维生素' + (type==='vitD3'?'D3':'AD');
+  }
+  if(rec.type === 'growth'){
+    var gs = DB.getGrowth();
+    var date = todayStr();
+    var dup = gs.some(function(x){ return x.date === date; });
+    var note = '';
+    if(dup){
+      // 同一天已存在：更新（覆盖当天数值）
+      gs.forEach(function(x){ if(x.date===date){ if(rec.weight) x.weight=rec.weight; if(rec.height) x.height=rec.height; if(rec.headCirc) x.headCirc=rec.headCirc; } });
+    }else{
+      gs.push({ id: uid(), date: date, ageLabel: (baby&&baby.birthday)?(monthDiff(new Date(baby.birthday), now)<1?'不满1个月':monthDiff(new Date(baby.birthday), now)+'个月'):'', weight: rec.weight||0, height: rec.height||0, headCirc: rec.headCirc||0, note: note });
+    }
+    DB.setGrowth(gs);
+    renderGrowthChart(); renderGrowthList(); renderHome();
+    var parts = [];
+    if(rec.weight) parts.push('体重'+rec.weight+'kg');
+    if(rec.height) parts.push('身高'+rec.height+'cm');
+    if(rec.headCirc) parts.push('头围'+rec.headCirc+'cm');
+    return '✅ 已记录：' + parts.join('、');
+  }
+  return null;
+}
 function aiSendCore(input, area){
   var q = input.value.trim();
   if(!q) return;
@@ -5768,16 +6071,62 @@ function aiSendCore(input, area){
     aiAppend(area, 'bot', '⚠️ 还没有配置 AI Key：请到右上角「设置」里填入 DeepSeek API Key（sk-开头），点测试通过后即可使用。');
     return;
   }
+  // 本地规则快速识别（免费秒回）
+  var localRec = tryLocalRecord(q);
+  if(localRec){
+    aiAppend(area, 'user', q);
+    var msg = applyLocalRecord(localRec);
+    if(msg){
+      aiAppend(area, 'bot', msg);
+      return;
+    }
+  }
   aiAppend(area, 'user', q);
   aiTyping(area, true);
   var ctx = buildBabyContext();
+  // 记录识别 prompt：判断是否记录类，是则返回 JSON（严格判断，宁缺毋滥）
+  var recPrompt = '你是记录识别器。判断用户输入是否在"记录宝宝数据"。\\n' +
+    '【应该记录】用户在报告已发生的具体数据：喂奶Xml、拉了/尿了、睡了X点起X点、体重X身高X头围X、吃了维生素、接种了疫苗、体检数据、发烧/摔跤/呕吐等异常、过敏、用了药、完成了启蒙打卡、达到里程碑。\\n' +
+    '【不要记录】以下情况一律返回 {"intent":"chat"}：\\n' +
+    '1. 提问/咨询（"宝宝吃多少合适？""今天奶量正常吗？"）\\n' +
+    '2. 未来计划（"明天要打疫苗""准备加辅食"）\\n' +
+    '3. 担心/讨论（"总吐奶怎么办？""是不是该补钙"）\\n' +
+    '4. 查询已有记录（"今天喂了几次？"）\\n' +
+    '5. 闲聊/寒暄/任何不含具体记录数据的句子\\n' +
+    '如果是记录，只返回 JSON（不要其他文字）：\\n' +
+    '{"intent":"record","records":{...}}，records 里按需填以下字段：\\n' +
+    '{"feeds":[{"value":150,"note":""}],"sleeps":[{"start":"21:30","end":"06:00","date":"YYYY-MM-DD或留空今天"}],"growth":[{"weight":6.5,"height":61,"headCirc":39.5}],"diapers":[{"type":"pee或poop"}],"vits":[{"type":"AD或D3"}],"exams":[{"date":"","weight":"","height":"","headCirc":"","note":""}],"vaccines":[{"name":"","dose":"","date":""}],"meds":[{"note":""}],"allergies":[{"source":""}],"events":[{"type":"发烧/摔跤/呕吐/腹泻/磕碰/其他","note":""}],"tasks":[{"name":""}],"milestones":[{"name":""}],"inss":[{"name":"","note":""}]}\\n' +
+    '如果不是记录，返回 {"intent":"chat"}\\n' +
+    '用户输入：' + q;
   var messages = [
-    {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
-    {role:'user', content:q}
+    {role:'system', content:'你是专业的婴幼儿养育 AI 助手，同时具备记录识别能力。用户提供宝宝的真实记录数据，请基于数据回答。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\\n\\n以下是宝宝当前的真实数据：\\n'+ctx},
+    {role:'user', content: recPrompt}
   ];
   callDeepSeek(key, messages, function(text){
+    // 尝试解析为记录 JSON
+    try{
+      var m = text.match(/\{[\s\S]*\}/);
+      if(m){
+        var parsed = JSON.parse(m[0]);
+        if(parsed.intent === 'record'){
+          aiTyping(area, false);
+          var result = applyUniversalRecords(parsed.records||{});
+          aiAppend(area, 'bot', result);
+          return;
+        }
+      }
+    }catch(e){}
+    // 不是记录：正常对话（用原始问题再问一次，避免记录识别 prompt 影响回答质量）
     aiTyping(area, false);
-    aiAppend(area, 'bot', text);
+    var realMessages = [
+      {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\\n\\n以下是宝宝当前的真实数据：\\n'+ctx},
+      {role:'user', content:q}
+    ];
+    callDeepSeek(key, realMessages, function(text2){
+      aiAppend(area, 'bot', text2);
+    }, function(err2){
+      aiAppend(area, 'bot', '❌ 调用失败：'+err2);
+    });
   }, function(err){
     aiTyping(area, false);
     aiAppend(area, 'bot', '❌ 调用失败：'+err+'。请检查设置里的 Key 是否有效、网络是否正常。');
