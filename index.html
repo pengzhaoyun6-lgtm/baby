@@ -1289,7 +1289,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     <div class="danger-zone">
       <button class="btn-danger" onclick="confirmClear()">🗑 清空所有数据</button>
     </div>
-    <div class="about-note">宝宝启蒙台 v2.0 · 单机版<br>数据只存在本机浏览器，请定期导出备份。<br>升级同步版时数据可无缝迁移。</div>
+    <div class="about-note" id="aboutNote">宝宝启蒙台 v5.2.9 · 云同步版<br>记录自动同步到 Gitee 私有云端，多设备共享。<br>开启同步后，家人手机填同一个 Token 即可同步。</div>
   </div>
 </div>
 
@@ -1310,16 +1310,18 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.9';
+var APP_VERSION = '5.3.1';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
+  var note = document.getElementById('aboutNote');
+  if(note) note.innerHTML = '宝宝启蒙台 v' + APP_VERSION + ' · 云同步版<br>记录自动同步到 Gitee 私有云端，多设备共享。<br>开启同步后，家人手机填同一个 Token 即可同步。';
 }
 
 /* =====================================================================
  * 数据层（Data Layer）
- * 所有读写都走 DB 对象。以后升级为云同步/局域网共享版时，
- * 只需替换本对象的实现（接口不变），界面代码零改动。
+ * 所有读写都走 DB 对象。云同步（Gitee）基于本对象实现，
+ * 接口统一，界面代码零改动。
  * ===================================================================== */
 var PREFIX = 'wbb2_';
 var META_KEY = 'wbb2_meta';
@@ -2358,6 +2360,19 @@ function extractGrowth(text){
   if(result.weight===null && kgs && kgs.length){ result.weight = parseFloat(kgs[0]); }
   if(result.height===null && cms && cms.length){ result.height = parseFloat(cms[0]); }
   if(result.headCirc===null && cms && cms.length>=2){ result.headCirc = parseFloat(cms[1]); }
+  // 兜底2：裸数字序列（如"6.5 61 39.5"或"体重6.5，身高61，头围39.5"）→ 按 体重/身高/头围 顺序
+  if(result.weight===null || result.height===null || result.headCirc===null){
+    var nums = t.match(/\d+(?:\.\d+)?/g);
+    if(nums && nums.length){
+      var ni = 0;
+      // 体重已从"公斤"提取 → 跳过第一个数字（体重）
+      if(result.weight!==null && nums[0] !== undefined && parseFloat(nums[0]) === result.weight){
+        ni = 1;
+      }
+      if(result.height===null && nums[ni] !== undefined){ result.height = parseFloat(nums[ni]); ni++; }
+      if(result.headCirc===null && nums[ni] !== undefined){ result.headCirc = parseFloat(nums[ni]); }
+    }
+  }
   // 月龄（如"三个月""6个月"）
   var mA = t.match(/([零一二两三四五六七八九十\d]+)\s*个月/);
   if(mA){
@@ -3197,7 +3212,8 @@ function renderGrowthChart(){
   var data = DB.getGrowth();
   var b = DB.getBaby();
   var gender = (b && b.gender==='girl') ? 'girl' : 'boy';
-  var who = WHO[gender][key];
+  var who = WHO[gender][key] || { p3:[], p50:[], p97:[] };  // headCirc 无 WHO 标准 → 空对照
+  var hasWho = !!(who && who.p3 && who.p3.length);
   var container = document.getElementById('chartContainer');
 
   var recs = data.filter(function(g){ return g[key] && g[key]>0; })
@@ -3215,8 +3231,8 @@ function renderGrowthChart(){
   var cw=W-P.left-P.right, ch=H-P.top-P.bottom;
   var maxMonth = Math.max(24, Math.ceil((recs[recs.length-1].months+2)/3)*3);
 
-  // Y 范围：取 WHO P3~P97 与数据范围并集
-  var allV = who.p3.concat(who.p97).concat(recs.map(function(r){return r.v;}));
+  // Y 范围：取 WHO P3~P97 与数据范围并集（headCirc 无 WHO 数据 → 只用数据范围）
+  var allV = (hasWho ? who.p3.concat(who.p97) : []).concat(recs.map(function(r){return r.v;}));
   var minV = Math.min.apply(null, allV);
   var maxV = Math.max.apply(null, allV);
   var range = maxV-minV || 1;
@@ -3271,28 +3287,30 @@ function renderGrowthChart(){
     svg.appendChild(vl);
   }
 
-  // WHO 正常范围带（P3-P97）
-  var band=document.createElementNS(svgNS,'path');
-  var d='M '+x(0)+' '+y(who.p3[0]);
-  for(var i=1;i<who.p3.length;i++) d+=' L '+x(i)+' '+y(who.p3[i]);
-  for(var j=who.p97.length-1;j>=0;j--) d+=' L '+x(j)+' '+y(who.p97[j]);
-  d+=' Z';
-  band.setAttribute('d',d);
-  band.setAttribute('fill','rgba(74,154,232,0.10)');
-  band.setAttribute('stroke','#A8D4F7');
-  band.setAttribute('stroke-width','0.8');
-  svg.appendChild(band);
+  // WHO 正常范围带（P3-P97）——headCirc 无 WHO 数据时跳过
+  if(hasWho){
+    var band=document.createElementNS(svgNS,'path');
+    var d='M '+x(0)+' '+y(who.p3[0]);
+    for(var i=1;i<who.p3.length;i++) d+=' L '+x(i)+' '+y(who.p3[i]);
+    for(var j=who.p97.length-1;j>=0;j--) d+=' L '+x(j)+' '+y(who.p97[j]);
+    d+=' Z';
+    band.setAttribute('d',d);
+    band.setAttribute('fill','rgba(74,154,232,0.10)');
+    band.setAttribute('stroke','#A8D4F7');
+    band.setAttribute('stroke-width','0.8');
+    svg.appendChild(band);
 
-  // WHO P50 中位线
-  var med=document.createElementNS(svgNS,'path');
-  var md='M '+x(0)+' '+y(who.p50[0]);
-  for(var k=1;k<who.p50.length;k++) md+=' L '+x(k)+' '+y(who.p50[k]);
-  med.setAttribute('d',md);
-  med.setAttribute('fill','none');
-  med.setAttribute('stroke',cMed);
-  med.setAttribute('stroke-width','1.5');
-  med.setAttribute('stroke-dasharray','5,4');
-  svg.appendChild(med);
+    // WHO P50 中位线
+    var med=document.createElementNS(svgNS,'path');
+    var md='M '+x(0)+' '+y(who.p50[0]);
+    for(var k=1;k<who.p50.length;k++) md+=' L '+x(k)+' '+y(who.p50[k]);
+    med.setAttribute('d',md);
+    med.setAttribute('fill','none');
+    med.setAttribute('stroke',cMed);
+    med.setAttribute('stroke-width','1.5');
+    med.setAttribute('stroke-dasharray','5,4');
+    svg.appendChild(med);
+  }
 
   // 宝宝数据折线
   if(recs.length>=2){
