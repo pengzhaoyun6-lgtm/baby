@@ -396,6 +396,20 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 .arb-icon{font-size:26px}
 .arb-title{font-size:14px;font-weight:800;color:var(--purple)}
 .arb-sub{font-size:11px;color:var(--text-sub)}
+/* 资料识别入库：长条按钮 */
+.ai-doc-entry{flex-shrink:0;margin-bottom:10px}
+.ai-doc-btn{
+  display:flex;align-items:center;gap:10px;width:100%;padding:13px 16px;
+  border-radius:14px;background:linear-gradient(135deg,var(--blue-light),var(--purple-light));
+  cursor:pointer;border:1px solid rgba(74,154,232,.2);min-height:52px;
+}
+.ai-doc-btn:active{transform:scale(.98)}
+.adb-icon{font-size:22px;flex-shrink:0}
+.adb-text{flex:1;font-size:14px;font-weight:800;color:var(--blue);display:flex;flex-direction:column;gap:2px;text-align:left}
+.adb-sub{font-size:11px;font-weight:500;color:var(--text-sub)}
+.adb-arrow{font-size:20px;color:var(--text-faint)}
+/* 周报/月报快捷按钮 */
+.ai-quick-report{background:var(--purple-light)!important;color:var(--purple)!important}
 .ai-mic{min-width:44px;min-height:44px;border-radius:12px;background:var(--purple-light);font-size:18px;flex-shrink:0}
 .ai-mic.listening{background:#FFE0E6;animation:pulse 1.2s infinite}
 .ai-modal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}
@@ -904,6 +918,14 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     </div>
   </section>
 
+  <!-- ===== Tab: 档案（健康档案详情） ===== -->
+  <section class="tab-panel" id="panel-archive">
+    <div class="card">
+      <div class="card-title">📁 健康档案 <span class="sub">宝宝/妈妈/基因/投保背景</span></div>
+      <div id="archiveList"></div>
+    </div>
+  </section>
+
   <!-- ===== Tab: 保险 ===== -->
   <section class="tab-panel" id="panel-insurance">
     <div class="card">
@@ -920,10 +942,8 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       <div class="ai-hero-title">🤖 AI 成长助手</div>
       <div class="ai-hero-sub">问睡眠 / 奶量 / 疫苗 / 启蒙，AI 自动读取宝宝记录数据回答，不用描述背景</div>
     </div>
-    <div class="ai-report-grid">
-      <button class="ai-report-btn" onclick="showWeeklyReport()"><span class="arb-icon">📊</span><span class="arb-title">成长周报</span><span class="arb-sub">本周总结</span></button>
-      <button class="ai-report-btn" onclick="showMonthlyReport()"><span class="arb-icon">📅</span><span class="arb-title">成长月报</span><span class="arb-sub">本月总结</span></button>
-      <button class="ai-report-btn" onclick="toggleDocImport()"><span class="arb-icon">📄</span><span class="arb-title">资料识别入库</span><span class="arb-sub">体检/病历/疫苗</span></button>
+    <div class="ai-doc-entry">
+      <button class="ai-doc-btn" onclick="toggleDocImport()"><span class="adb-icon">📄</span><span class="adb-text">资料识别入库<span class="adb-sub">体检 / 病历 / 疫苗 一键入档</span></span><span class="adb-arrow">›</span></button>
     </div>
     <div class="ai-doc-import" id="aiDocImport" style="display:none">
       <div style="font-size:12.5px;color:var(--text-sub);line-height:1.6;margin-bottom:8px">
@@ -990,6 +1010,10 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     <button class="nav-item" data-tab="exam" onclick="switchTab('exam')">
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg>
       <span>儿保</span>
+    </button>
+    <button class="nav-item" data-tab="archive" onclick="switchTab('archive')">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zM5 8h14l-1 12H6L5 8z"/><path d="M10 12h4"/></svg>
+      <span>档案</span>
     </button>
     <button class="nav-item" data-tab="insurance" onclick="switchTab('insurance')">
       <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
@@ -1325,7 +1349,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.10';
+var APP_VERSION = '5.3.11';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1792,9 +1816,9 @@ function migrateV1(){
  * ===================================================================== */
 window.switchTab = function(tab){
   state.tab = tab;
-  var panels = {home:'panel-home', sleep:'panel-sleep', growth:'panel-growth', play:'panel-play', stats:'panel-stats', vaccine:'panel-vaccine', knowledge:'panel-knowledge', ai:'panel-ai', exam:'panel-exam', insurance:'panel-insurance'};
+  var panels = {home:'panel-home', sleep:'panel-sleep', growth:'panel-growth', play:'panel-play', stats:'panel-stats', vaccine:'panel-vaccine', knowledge:'panel-knowledge', ai:'panel-ai', exam:'panel-exam', archive:'panel-archive', insurance:'panel-insurance'};
   var navs = document.querySelectorAll('.nav-item');
-  var tabs = ['home','sleep','growth','play','stats','vaccine','exam','insurance','knowledge','ai'];
+  var tabs = ['home','sleep','growth','play','stats','vaccine','exam','archive','insurance','knowledge','ai'];
   for(var i=0;i<tabs.length;i++){
     var p = document.getElementById(panels[tabs[i]]);
     if(p) p.classList.toggle('active', tabs[i]===tab);
@@ -1806,6 +1830,7 @@ window.switchTab = function(tab){
   if(tab==='play'){ renderTasks(); renderMilestones(); }
   if(tab==='stats'){ renderStats(); }
   if(tab==='exam'){ renderExamPlan(); renderExams(); renderMeds(); renderAllergies(); renderEvents(); }
+  if(tab==='archive'){ renderArchive(); }
   if(tab==='insurance'){ renderInsurance(); }
   if(tab==='vaccine'){ renderVaccines(); renderVaccineRec(); }
   if(tab==='knowledge') renderKnowledge();
@@ -4555,7 +4580,7 @@ var DEFAULT_INSURANCES = [
     doc: '# 少儿外购药械费用医疗保险\n保险公司：人保寿险｜保单号：017928991451158｜保费：27元/年\n保障期间：2026.06.29~2027.06.29｜续保：不保证续保\n报案电话：95518转寿险\n\n## 保障责任\n- 年度保额：100万/年\n- 赔付比例：使用社保100%；未用社保（社保目录内）90%\n- 免赔额：无\n\n## 覆盖范围\n- 住院期间外购药品及器械\n- 特殊门诊外购药品及器械\n- 门诊手术外购药品及器械\n- 住院前后45天门急诊外购药品及器械\n\n## 等待期\n90天（2026.09.27后生效）\n\n## 免责\n含遗传性疾病免责条款。\n\n## 适用场景\n医生开外购药/器械（需凭医生处方在医院外购买）。'
   }
 ];
-/* 首次打开自动填充默认保单；已有保单时合并补齐缺失的默认保单（修复只显示1份问题） */
+/* 首次打开自动填充默认保单；已有保单时合并补齐缺失的默认保单（修复只显示1份问题）+ 字段升级 */
 function seedDefaultInsurances(){
   try{
     var inss = DB.getInsurances() || [];
@@ -4564,8 +4589,20 @@ function seedDefaultInsurances(){
     inss.forEach(function(x){ if(x.id) existingIds[x.id]=1; if(x.name) existingNames[x.name]=1; });
     var added = 0;
     DEFAULT_INSURANCES.forEach(function(def){
-      // 已存在（同 id 或同名）则跳过；否则补齐
-      if(existingIds[def.id]) return;
+      // 已存在（同 id）→ 补齐缺失字段（premium/phone 等新字段），不覆盖已有值
+      if(existingIds[def.id]){
+        inss.forEach(function(x){
+          if(x.id === def.id){
+            if(!x.premium && def.premium) x.premium = def.premium;
+            if(!x.phone && def.phone) x.phone = def.phone;
+            if(!x.amount && def.amount) x.amount = def.amount;
+            if(!x.note && def.note) x.note = def.note;
+            if(!x.doc && def.doc) x.doc = def.doc;
+          }
+        });
+        return;
+      }
+      // 同名已存在（用户手动添加）→ 跳过
       if(existingNames[def.name]) return;
       inss.push(def);
       added++;
@@ -4617,6 +4654,42 @@ function seedHealthRecords(){
     localStorage.setItem('wbb2_health_seeded', '1');
   }catch(e){}
 }
+/* 档案页：展示健康档案详情（宝宝/妈妈/基因/投保/理赔指引/关键时间节点） */
+window.renderArchive = function(){
+  var list = document.getElementById('archiveList');
+  if(!list) return;
+  if(typeof DEFAULT_HEALTH_ARCHIVE === 'undefined'){
+    list.innerHTML = '<div class="feed-empty">暂无健康档案</div>';
+    return;
+  }
+  var A = DEFAULT_HEALTH_ARCHIVE;
+  var html = '';
+  // 宝宝
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--blue);margin-bottom:6px">👶 宝宝出生情况</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.baby+'</div></div>';
+  // 妈妈
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--purple);margin-bottom:6px">🤱 妈妈孕期/生产</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.mom+'</div></div>';
+  // 基因
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--green);margin-bottom:6px">🧬 基因检测</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.gene+'</div></div>';
+  // 投保告知
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--gold);margin-bottom:6px">🛡️ 投保告知提示</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.insuranceNote+'</div></div>';
+  // 理赔指引
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--red,#E0709A);margin-bottom:6px">📞 理赔操作指引</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.claimGuide+'</div></div>';
+  // 关键时间节点
+  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+    '<div style="font-weight:800;font-size:13.5px;color:var(--blue);margin-bottom:6px">📅 关键时间节点</div>'+
+    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.keyDates+'</div></div>';
+  list.innerHTML = html;
+};
 function renderInsurance(){
   var list = document.getElementById('insuranceList');
   if(!list) return;
@@ -4673,7 +4746,6 @@ function renderInsurance(){
       '<div class="ins-top" style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'+
         '<span class="ins-type '+tc+'" style="padding:2px 10px;border-radius:8px;font-size:11.5px;font-weight:700">'+(ins.type||'保险')+'</span>'+
         '<span class="ins-name" style="flex:1;font-weight:700;font-size:14px">'+(ins.name||'')+'</span>'+
-        '<button class="exam-del" onclick="delInsurance(\''+ins.id+'\')">✕</button>'+
       '</div>'+
       '<div class="ins-meta" style="display:flex;flex-direction:column;gap:5px;font-size:12.5px">'+
         '<div style="display:flex;flex-wrap:wrap;gap:4px 14px">'+
@@ -5560,6 +5632,9 @@ function renderAIQuick(){
   qs.forEach(function(q){
     html += '<button onclick="aiAsk2(\''+q[1].replace(/'/g,"\\'")+'\')">'+q[0]+'</button>';
   });
+  // 周报/月报（与快捷问题同一排，样式区分）
+  html += '<button class="ai-quick-report" onclick="showWeeklyReport()">📊 成长周报</button>';
+  html += '<button class="ai-quick-report" onclick="showMonthlyReport()">📅 成长月报</button>';
   box.innerHTML = html;
 }
 /* 内嵌默认 DeepSeek Key（用户已提供，打开链接即用 AI，无需配置） */
@@ -6591,7 +6666,7 @@ function refreshAll(){
   updateHeader(); renderSideBaby(); renderFeed(); renderDiapers(); renderVits();
   renderSleep(); renderGrowthChart(); renderGrowthList(); renderTasks(); renderMilestones();
   renderVaccines(); renderVaccineRec(); renderKnowledge(); renderExamPlan(); renderExams();
-  renderMeds(); renderAllergies(); renderEvents(); renderInsurance(); renderHome();
+  renderMeds(); renderAllergies(); renderEvents(); renderInsurance(); renderArchive(); renderHome();
   if(window.renderAIQuick) renderAIQuick();
   toast('☁️ 已同步最新数据' + (baby?'（'+baby.name+'）':''));
 }
