@@ -1313,7 +1313,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.1';
+var APP_VERSION = '5.2.2';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -2039,7 +2039,7 @@ function renderDiapers(){
   var diapers = DB.getDiapers();
   var td = todayStr();
   var today = diapers.filter(function(x){ return dateStr(new Date(x.ts))===td; })
-    .sort(function(a,b){ return a.ts<b.ts?-1:1; });
+    .sort(function(a,b){ return a.ts<b.ts?1:-1; });  // 从近到远（最新在最上）
   var list = document.getElementById('diaperList');
   if(!today.length){
     list.innerHTML = '<div class="feed-empty">今天还没有大小便记录<br>点上方按钮记录</div>';
@@ -2091,7 +2091,7 @@ function renderVits(){
   var vits = DB.getVits();
   var td = todayStr();
   var today = vits.filter(function(x){ return dateStr(new Date(x.ts))===td; })
-    .sort(function(a,b){ return a.ts<b.ts?-1:1; });
+    .sort(function(a,b){ return a.ts<b.ts?1:-1; });  // 从近到远（最新在最上）
   var list = document.getElementById('vitList');
   if(!today.length){
     list.innerHTML = '<div class="feed-empty">今天还没有维生素记录<br>点上方按钮记录</div>';
@@ -4441,7 +4441,7 @@ function renderInsurance(){
   }
   var td = todayStr();
   var html = '';
-  inss.forEach(function(ins){
+  inss.slice().reverse().forEach(function(ins){  // 最新的保单在最上
     // 缴费提醒状态
     var dueTxt = '';
     var warn = false;
