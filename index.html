@@ -1312,7 +1312,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.6';
+var APP_VERSION = '5.2.7';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1427,9 +1427,14 @@ var DB = {
     return true;
   },
   clearAll: function(){
-    var id = this.currentId();
-    var keys = ['baby','feeds','sleeps','growth','checks','ms','diapers','vits'];
-    keys.forEach(function(k){ DB._del((id?id+'_':'')+k); });
+    // 彻底清空：所有 wbb2_ 数据键 + meta（保留 wbb2_sync 同步配置，避免重新填 token）
+    var keep = ['wbb2_sync'];
+    var del = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf(PREFIX) === 0 && keep.indexOf(k) < 0) del.push(k);
+    }
+    del.forEach(function(k){ localStorage.removeItem(k); });
   }
 };
 
@@ -3562,8 +3567,7 @@ window.closeClearModal = function(){
 window.clearAllData = function(){
   DB.clearAll();
   document.getElementById('clearModal').classList.remove('show');
-  initBaby();
-  location.reload();
+  location.reload();  // 重载后不自动建宝宝，等同步拉取云端数据
 };
 
 /* ===== 导出 / 导入 ===== */
@@ -5666,15 +5670,20 @@ function ghApi(method, path, body){
 }
 
 /* ============ 合并式同步（永不覆盖对方数据） ============ */
-var SYNC_ARRAY_KEYS = ['feeds','sleeps','growth','checks','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'];
-var SYNC_OBJECT_KEYS = ['baby','ms'];
+var SYNC_ARRAY_KEYS = ['feeds','sleeps','growth','checks','diapers','vits','cvaccs','exams','meds','allergies','events','inss'];
+var SYNC_OBJECT_KEYS = ['baby','ms','vaccines'];
 
-/* 数组合并：按 id 去重（两边都保留，谁的 id 相同取后写的） */
+/* 数组合并：按 id 去重（两边都保留，谁的 id 相同取后写的）；兼容对象/空值 */
 function mergeArrays(a, b){
+  // 非数组（ms/vaccines 等 dict）→ 直接对象合并
+  if(a && typeof a !== 'object') a = [a];
+  if(b && typeof b !== 'object') b = [b];
+  if(a && !Array.isArray(a)) a = null;
+  if(b && !Array.isArray(b)) b = null;
   var map = {};
   var noId = [];
-  (a||[]).forEach(function(x){ if(x && x.id) map[x.id] = x; else if(x) noId.push(x); });
-  (b||[]).forEach(function(x){ if(x && x.id) map[x.id] = x; else if(x) noId.push(x); });
+  (a||[]).forEach(function(x){ if(x && typeof x === 'object' && x.id) map[x.id] = x; else if(x) noId.push(x); });
+  (b||[]).forEach(function(x){ if(x && typeof x === 'object' && x.id) map[x.id] = x; else if(x) noId.push(x); });
   var res = [];
   for(var k in map) res.push(map[k]);
   return res.concat(noId);
