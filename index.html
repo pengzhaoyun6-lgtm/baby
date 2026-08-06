@@ -1325,7 +1325,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.9';
+var APP_VERSION = '5.3.10';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -4576,6 +4576,47 @@ function seedDefaultInsurances(){
     localStorage.setItem('wbb2_ins_seeded', '1');
   }catch(e){}
 }
+/* 健康档案（内嵌：宝宝/妈妈健康背景 + 理赔指引，AI 问诊/问保单时可参考）
+ * 数据来源：宝宝保险规划完整档案.md（2026-08-06 整理） */
+var DEFAULT_HEALTH_ARCHIVE = {
+  baby: '彭予安（女），2026-04-24 出生，胎龄39周足月，剖宫产（原因：宫颈水肿+胎动频繁），出生体重3.03kg、身长46cm，Apgar 9-10-10分，非早产无窒息缺氧。G2P1，否认地中海贫血/G6PD家族史。',
+  mom: '妈妈黄雅婷孕期：孕25周（2026-01-16）诊断胎儿宫内生长受限FGR（EFW 591g/2.7th），行羊水穿刺基因检测；32周/36周两次产前超声未见明显异常；出院诊断含"胎儿基因异常"（见基因检测）。',
+  gene: '基因检测（2026-02）：CMA染色体微阵列完全正常（arr(1-22)×2）；WES全外显子检出 KCNJ11 c.673A>G 杂合VUS（意义不明，来源父亲），报告结论"未检测到与胎儿表型相关的基因明确致病突变"。该VUS非致病，可能随研究重新分类。',
+  insuranceNote: '投保告知选择"以上情况全无"；出院记录有"胎儿基因异常"表述、有FGR病史，若保险公司调取病历可能存在"未如实告知"争议（保单②免责不含遗传病，但可能以此解除合同；保单②两年不可抗辩期满日2028-06-29）。',
+  claimGuide: '【病症速查】意外受伤→保单①平安95511（0免赔100%，每次限额2万）；35种传染病门急诊（流感/手足口等）→保单③人保95518转寿险（社保结算80%，未用社保60%，等待期7天2026-07-06后生效）；肺炎/中耳炎等5种其他疾病门急诊→保单③（等待期90天2026-09-27后生效）；需住院（任何疾病）→保单②人保95518转寿险（≤5000元80%/>5000元100%）；医生开外购药/器械→保单④人保95518转寿险（100%，未用社保90%）；普通感冒/腹泻/湿疹门急诊→无覆盖自费；疫苗不良反应→保单①平安95511（上限5000元，接种后15天内）。【就医要点】优先社保结算；保留发票/清单/病历/检查报告原件；门诊病历写明诊断（保单③需匹配40种清单）；外购药需医生处方；意外24小时内报案。',
+  keyDates: '【关键时间节点】2026-06-14 宝宝1月龄体检（天河妇幼，正常）；2026-06-29 人保保单②③④生效；2026-07-01 平安保单①生效；2026-07-06 保单③传染病等待期结束；2026-09-27 保单②③④的90天等待期结束（全面生效）；2028-06-29 保单②两年不可抗辩期满。'
+};
+/* 首次打开自动导入历史健康记录（出生+1月龄体检+异常事件，去重不覆盖） */
+function seedHealthRecords(){
+  try{
+    if(localStorage.getItem('wbb2_health_seeded')) return;
+    var baby = DB.getBaby();
+    if(!baby) return;
+    // 出生记录（2026-04-24）：写入生长记录
+    var gs = DB.getGrowth();
+    if(!gs.some(function(x){ return x.date==='2026-04-24'; })){
+      gs.push({ id: uid(), date: '2026-04-24', ageLabel: '出生', weight: 3.03, height: 46, headCirc: 0, note: '出生记录（剖宫产，Apgar 9-10-10）' });
+      DB.setGrowth(gs);
+    }
+    // 1月龄体检（2026-06-14）：写入体检记录 + 生长记录
+    var es = DB.getExams();
+    if(!es.some(function(x){ return x.date==='2026-06-14'; })){
+      es.push({ id: uid(), date: '2026-06-14', ageLabel: '1月21天', weight: 4.95, height: 56, headCirc: 37.5, note: '天河区妇幼保健院儿保科：儿心量表发育商DQ100（中等）；神经运动20项大部分通过，异常：头偏左侧、花铃棒留握欠佳；髋关节彩超双侧Graf I型正常；营养评价正常' });
+      DB.setExams(es);
+      if(!gs.some(function(x){ return x.date==='2026-06-14'; })){
+        gs.push({ id: uid(), date: '2026-06-14', ageLabel: '1月21天', weight: 4.95, height: 56, headCirc: 37.5, note: '体检' });
+        DB.setGrowth(gs);
+      }
+    }
+    // 异常事件：头偏左侧
+    var evs = DB.getEvents();
+    if(!evs.some(function(x){ return x.date==='2026-06-14' && x.type==='其他'; })){
+      evs.push({ id: uid(), date: '2026-06-14', type: '其他', note: '体检发现头偏左侧、花铃棒留握欠佳（神经运动20项，已遵医嘱训练）' });
+      DB.setEvents(evs);
+    }
+    localStorage.setItem('wbb2_health_seeded', '1');
+  }catch(e){}
+}
 function renderInsurance(){
   var list = document.getElementById('insuranceList');
   if(!list) return;
@@ -5600,6 +5641,14 @@ function buildBabyContext(){
         lines.push('  保单详情文档：\n' + ins.doc.slice(0, 2500));
       }
     });
+  }
+  // 健康档案（内嵌历史背景：孕期/基因/投保告知/理赔指引/关键时间节点）
+  if(typeof DEFAULT_HEALTH_ARCHIVE !== 'undefined'){
+    lines.push('【健康档案】');
+    lines.push('宝宝：' + DEFAULT_HEALTH_ARCHIVE.baby);
+    lines.push('妈妈孕期：' + DEFAULT_HEALTH_ARCHIVE.mom);
+    lines.push('基因检测：' + DEFAULT_HEALTH_ARCHIVE.gene);
+    lines.push('投保告知提示：' + DEFAULT_HEALTH_ARCHIVE.insuranceNote);
   }
   // 今日
   var feedsT = DB.getFeeds().filter(function(f){ return dateStr(new Date(f.ts))===td; });
@@ -6737,6 +6786,7 @@ function fitAIViewport(){
 function init(){
   initBaby();
   seedDefaultInsurances();  // 首次打开自动填充默认保单（4份内嵌）
+  seedHealthRecords();      // 首次打开自动导入历史健康记录（出生+1月龄体检+异常）
   applyTheme();
   renderVersion();
   // 先检测修复乱码（同步前，避免把乱码上传覆盖云端）
