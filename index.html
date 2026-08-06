@@ -1312,7 +1312,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.4';
+var APP_VERSION = '5.2.5';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5696,14 +5696,45 @@ function mergeObjects(a, b){
   }
   return res;
 }
-/* 完整合并两份打包数据（local + remote → 并集） */
+/* 完整合并两份打包数据（local + remote → 并集，自动清理空宝宝） */
 function mergeAll(local, remote){
   var merged = { v:4, syncedAt: new Date().toISOString(), meta: null };
   // 合并 meta（宝宝列表按 id 去重）
   var babies = mergeArrays((local.meta && local.meta.babies) || [], (remote.meta && remote.meta.babies) || []);
+  // 统计每个宝宝的总记录数（识别"空宝宝"——同一个宝宝的副本一个空一个有数据时，去掉空的）
+  function countRec(id){
+    var n = 0;
+    var l = local[id]||{}, r = remote[id]||{};
+    SYNC_ARRAY_KEYS.forEach(function(k){
+      n += (l[k]||[]).length + (r[k]||[]).length;
+    });
+    return n;
+  }
+  // 若有多个宝宝，且某宝宝 0 记录、另一宝宝有记录且名字相同 → 去掉空的那个（同人副本）
+  var byName = {};
+  babies.forEach(function(b){ (byName[b.name] = byName[b.name]||[]).push(b); });
+  for(var nm in byName){
+    var group = byName[nm];
+    if(group.length > 1){
+      var withData = group.filter(function(b){ return countRec(b.id) > 0; });
+      var empty = group.filter(function(b){ return countRec(b.id) === 0; });
+      if(withData.length >= 1 && empty.length > 0){
+        var keepIds = {};
+        withData.forEach(function(b){ keepIds[b.id] = 1; });
+        babies = babies.filter(function(b){ return keepIds[b.id] || countRec(b.id) > 0; });
+      }
+    }
+  }
+  // current：优先选有记录的宝宝；其次本地；最后云端
   var curLocal = local.meta ? local.meta.current : '';
   var curRemote = remote.meta ? remote.meta.current : '';
-  merged.meta = { babies: babies, current: curLocal || curRemote };
+  var cur = curLocal || curRemote;
+  var curHasData = babies.some(function(b){ return b.id === cur && countRec(b.id) > 0; });
+  if(!curHasData){
+    var best = babies.slice().sort(function(a,b){ return countRec(b.id) - countRec(a.id); })[0];
+    if(best) cur = best.id;
+  }
+  merged.meta = { babies: babies, current: cur };
   // 合并每个宝宝的数据
   var ids = {};
   babies.forEach(function(b){ ids[b.id] = 1; });
@@ -5720,7 +5751,8 @@ function parseSyncContent(content){
   return JSON.parse(decodeURIComponent(escape(atob(content.replace(/\n/g,'')))));
 }
 
-/* 核心同步：合并式——本地与云端按记录 id 合并，永不覆盖对方数据 */
+/* 核心同步：合并式——本地与云端按记录 id 合并，永不覆盖对方数据
+ * 安全铁律：GET 失败 / 解析失败时，宁可不同步，绝不拿本地覆盖云端（防丢数据） */
 function doSync(force){
   if(!syncState.token) return Promise.reject(new Error('未配置 Token'));
   var local = packAll();
@@ -5735,12 +5767,17 @@ function doSync(force){
         // 无论哪边新，都上传合并结果（云端 = 并集，永不丢数据）
         return uploadSync(res.j.sha);
       }catch(e){
-        // 远端解析失败 → 本地覆盖上传
-        return uploadSync(res.j.sha);
+        // 云端解析失败：保留云端原样，不覆盖（宁可不同步也不丢数据）
+        console.warn('同步：云端解析失败，跳过本次上传', e);
+        throw new Error('云端数据异常，已停止同步以保护数据');
       }
     }else{
-      // 远端不存在 → 首次上传
-      return uploadSync(null);
+      // GET 未返回内容：404=云端还没有文件（首次使用，允许上传）；其他=网络问题（禁止覆盖）
+      var msg = res.j && res.j.message ? String(res.j.message) : '';
+      if(msg.indexOf('404') >= 0 || msg.indexOf('Not Found') >= 0 || !res.j){
+        return uploadSync(null);  // 首次使用：创建云端文件
+      }
+      throw new Error('同步失败：' + msg + '（已保护云端数据，未覆盖）');
     }
   });
 }
