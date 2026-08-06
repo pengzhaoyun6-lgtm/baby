@@ -1311,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.3';
+var APP_VERSION = '5.3.4';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5925,9 +5925,49 @@ function scheduleSync(){
   if(syncApplying) return;  // 拉取应用数据期间不触发
   if(syncState.timer) clearTimeout(syncState.timer);
   syncState.timer = setTimeout(function(){
-    doSync(false).catch(function(){ /* 静默失败，下次再试 */ });
+    doSync(false).then(function(){ syncState.pending = false; saveSyncState(); })
+      .catch(function(){ syncState.pending = true; saveSyncState(); });  // 失败标记 pending，下次自动补传
   }, 5000);
 }
+/* 页面切走/锁屏：立即上传挂起的记录（不等防抖，解决手机记录完锁屏丢失） */
+function flushSync(){
+  if(!syncState.on || !syncState.token) return;
+  if(syncApplying) return;
+  if(syncState.timer){ clearTimeout(syncState.timer); syncState.timer = null; }
+  doSync(false).then(function(){ syncState.pending = false; saveSyncState(); })
+    .catch(function(){ syncState.pending = true; saveSyncState(); });
+}
+window.addEventListener('pagehide', flushSync);
+document.addEventListener('visibilitychange', function(){
+  if(document.hidden){
+    flushSync();  // 切后台：立即上传挂起记录
+  }else{
+    // 回到前台/主屏幕重新打开：拉取云端最新（解决 iOS 主屏幕入口恢复旧页面不同步）
+    if(syncState.on && syncState.token){
+      var now = Date.now();
+      if(!window.__lastVisibleSync || now - window.__lastVisibleSync > 8000){
+        window.__lastVisibleSync = now;
+        doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+      }
+    }
+  }
+});
+window.addEventListener('pageshow', function(e){
+  // iOS 主屏幕 WebClip：从 bfcache/后台恢复时页面不重新加载，这里强制拉取最新并刷新界面
+  if(e.persisted && syncState.on && syncState.token){
+    doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+  }
+});
+window.addEventListener('focus', function(){
+  // 兜底：窗口重新获得焦点也拉取并刷新（限频8秒，避免频繁请求）
+  if(syncState.on && syncState.token){
+    var now = Date.now();
+    if(!window.__lastFocusSync || now - window.__lastFocusSync > 8000){
+      window.__lastFocusSync = now;
+      doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+    }
+  }
+});
 /* 挂到所有数据变更点 */
 function hookSync(){
   var orig = {};
@@ -5947,7 +5987,12 @@ function initSync(){
   loadSyncState();
   hookSync();
   if(syncState.on && syncState.token){
-    doSync(false).catch(function(){});
+    doSync(false).then(function(){ refreshAll(); }).catch(function(){
+      // 启动拉取失败：10 秒后自动重试一次（手机网络波动/主屏幕冷启动常见）
+      setTimeout(function(){
+        if(syncState.on && syncState.token) doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+      }, 10000);
+    });
   }
   updateSyncUI();
 }
