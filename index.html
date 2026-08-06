@@ -1311,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.4';
+var APP_VERSION = '5.3.5';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5598,16 +5598,16 @@ var SYNC_OWNER = 'pzy192518';
 var SYNC_REPO = SYNC_OWNER + '/baby-sync';
 var SYNC_FILE = 'baby-data.json';
 var SYNC_BRANCH = 'master';  // Gitee 默认分支是 master
-var syncState = { on:false, token:'', lastSync:'', timer:null, sha:null };
+var syncState = { on:false, token:'', lastSync:'', timer:null, sha:null, lastResult:'', pending:false };
 
 function loadSyncState(){
   try{
     var s = JSON.parse(localStorage.getItem('wbb2_sync')||'{}');
-    syncState.on = !!s.on; syncState.token = s.token||''; syncState.lastSync = s.lastSync||''; syncState.sha = s.sha||null;
+    syncState.on = !!s.on; syncState.token = s.token||''; syncState.lastSync = s.lastSync||''; syncState.sha = s.sha||null; syncState.lastResult = s.lastResult||'';
   }catch(e){}
 }
 function saveSyncState(){
-  localStorage.setItem('wbb2_sync', JSON.stringify({on:syncState.on, token:syncState.token, lastSync:syncState.lastSync, sha:syncState.sha}));
+  localStorage.setItem('wbb2_sync', JSON.stringify({on:syncState.on, token:syncState.token, lastSync:syncState.lastSync, sha:syncState.sha, lastResult:syncState.lastResult}));
 }
 function getSyncToken(){
   return syncState.token;
@@ -5649,7 +5649,12 @@ function updateSyncUI(){
   var cb = document.getElementById('setSyncOn');
   if(st) st.textContent = syncState.on ? '已开启' : '未开启';
   if(cb) cb.checked = syncState.on;
-  if(det) det.textContent = '上次同步：' + (syncState.lastSync || '--');
+  if(det){
+    var t = '上次同步：' + (syncState.lastSync || '--');
+    if(syncState.lastResult === 'fail') t += '（最近一次失败，会自动重试）';
+    else if(syncState.pending) t += '（有未上传记录，稍后自动补传）';
+    det.textContent = t;
+  }
 }
 
 /* 打包/解包全部数据 */
@@ -5919,14 +5924,51 @@ function refreshAll(){
   toast('☁️ 已同步最新数据' + (baby?'（'+baby.name+'）':''));
 }
 
+/* 自动同步（带重试3次 + 结果反馈）：记录后/切后台/回前台统一走这里
+ * retries 剩余重试次数，delay 当前等待秒数（2/5/10 递增） */
+function autoSync(showToast){
+  if(!syncState.on || !syncState.token) return;
+  if(syncApplying) return;
+  if(syncState._busy) return;  // 上一次同步还在进行，跳过（避免并发）
+  syncState._busy = true;
+  if(showToast) toast('☁️ 同步中…');
+  doSync(false).then(function(){
+    syncState._busy = false;
+    syncState.pending = false;
+    syncState.lastResult = 'ok';
+    syncState.lastSync = new Date().toLocaleString();
+    saveSyncState();
+    refreshAll();  // 拉取后刷新全部界面（主屏幕恢复时 UI 与数据一致），自带成功提示
+  }).catch(function(e){
+    syncState._busy = false;
+    var n = syncState._retries || 0;
+    if(n < 3){
+      syncState._retries = n + 1;
+      var delays = [2000, 5000, 10000];
+      if(syncState._retryTimer) clearTimeout(syncState._retryTimer);
+      syncState._retryTimer = setTimeout(function(){
+        syncState._retries = 0;
+        autoSync(false);
+      }, delays[n]);
+      syncState.pending = true;
+      saveSyncState();
+      if(showToast) toast('⚠️ 同步失败，' + (delays[n]/1000) + '秒后自动重试…');
+    }else{
+      syncState._retries = 0;
+      syncState.pending = true;
+      syncState.lastResult = 'fail';
+      saveSyncState();
+      if(showToast) toast('❌ 同步失败：' + (e.message||'网络异常') + '（下次打开会自动重试）');
+    }
+  });
+}
 /* 记录后自动同步（防抖5秒） */
 function scheduleSync(){
   if(!syncState.on || !syncState.token) return;
   if(syncApplying) return;  // 拉取应用数据期间不触发
   if(syncState.timer) clearTimeout(syncState.timer);
   syncState.timer = setTimeout(function(){
-    doSync(false).then(function(){ syncState.pending = false; saveSyncState(); })
-      .catch(function(){ syncState.pending = true; saveSyncState(); });  // 失败标记 pending，下次自动补传
+    autoSync(false);  // 自动同步不打扰（静默，成功后更新状态栏）
   }, 5000);
 }
 /* 页面切走/锁屏：立即上传挂起的记录（不等防抖，解决手机记录完锁屏丢失） */
@@ -5934,8 +5976,7 @@ function flushSync(){
   if(!syncState.on || !syncState.token) return;
   if(syncApplying) return;
   if(syncState.timer){ clearTimeout(syncState.timer); syncState.timer = null; }
-  doSync(false).then(function(){ syncState.pending = false; saveSyncState(); })
-    .catch(function(){ syncState.pending = true; saveSyncState(); });
+  autoSync(false);
 }
 window.addEventListener('pagehide', flushSync);
 document.addEventListener('visibilitychange', function(){
@@ -5947,7 +5988,7 @@ document.addEventListener('visibilitychange', function(){
       var now = Date.now();
       if(!window.__lastVisibleSync || now - window.__lastVisibleSync > 8000){
         window.__lastVisibleSync = now;
-        doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+        autoSync(true);
       }
     }
   }
@@ -5955,7 +5996,7 @@ document.addEventListener('visibilitychange', function(){
 window.addEventListener('pageshow', function(e){
   // iOS 主屏幕 WebClip：从 bfcache/后台恢复时页面不重新加载，这里强制拉取最新并刷新界面
   if(e.persisted && syncState.on && syncState.token){
-    doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+    autoSync(false);
   }
 });
 window.addEventListener('focus', function(){
@@ -5964,7 +6005,7 @@ window.addEventListener('focus', function(){
     var now = Date.now();
     if(!window.__lastFocusSync || now - window.__lastFocusSync > 8000){
       window.__lastFocusSync = now;
-      doSync(false).then(function(){ refreshAll(); }).catch(function(){});
+      autoSync(false);
     }
   }
 });
@@ -5987,12 +6028,7 @@ function initSync(){
   loadSyncState();
   hookSync();
   if(syncState.on && syncState.token){
-    doSync(false).then(function(){ refreshAll(); }).catch(function(){
-      // 启动拉取失败：10 秒后自动重试一次（手机网络波动/主屏幕冷启动常见）
-      setTimeout(function(){
-        if(syncState.on && syncState.token) doSync(false).then(function(){ refreshAll(); }).catch(function(){});
-      }, 10000);
-    });
+    autoSync(true);  // 启动拉取（带重试+反馈），成功后自动刷新界面
   }
   updateSyncUI();
 }
