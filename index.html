@@ -939,7 +939,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 
 <!-- ===== Side Nav ===== -->
 <nav class="side-nav" id="sideNav">
-  <div class="side-logo" onclick="openBabySwitch()" title="点击管理宝宝">
+  <div class="side-logo" onclick="openBabyEdit()" title="编辑宝宝信息">
     <div class="logo-icon" id="sideBabyAvatar">👶</div>
     <div class="logo-info">
       <div class="logo-text" id="sideBabyName">宝宝</div>
@@ -1217,9 +1217,8 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 <div class="modal-mask" id="babyModal">
   <div class="modal">
     <button class="modal-close" onclick="closeBabySwitch()">✕</button>
-    <div class="modal-title">👶 宝宝管理</div>
+    <div class="modal-title">👶 宝宝信息</div>
     <div id="babyListBox"></div>
-    <button class="btn-primary" style="background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3);width:100%;margin-top:14px" onclick="addNewBaby()">＋ 添加宝宝</button>
   </div>
 </div>
 
@@ -1313,7 +1312,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.3';
+var APP_VERSION = '5.2.4';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5065,6 +5064,14 @@ window.openBabySwitch = function(){
   renderBabyList();
   document.getElementById('babyModal').classList.add('show');
 };
+/* 编辑当前宝宝（单宝宝模式：logo 点击直达） */
+window.openBabyEdit = function(){
+  var id = DB.currentId();
+  if(!id) return;
+  renderBabyList();
+  document.getElementById('babyModal').classList.add('show');
+  editBaby(id);
+};
 window.closeBabySwitch = function(){
   document.getElementById('babyModal').classList.remove('show');
 };
@@ -5081,10 +5088,10 @@ window.renderBabyList = function(){
     var active = b.id === meta.current;
     var m = b.birthday ? monthDiff(new Date(b.birthday), new Date()) : null;
     var ageTxt = m===null ? '--' : (m<1 ? '不满1个月' : m+'个月');
-    html += '<div class="baby-row'+(active?' active':'')+'" onclick="switchBaby(\''+b.id+'\')">'+
+    html += '<div class="baby-row'+(active?' active':'')+'">'+
       '<div class="baby-row-avatar">'+(b.gender==='girl'?'👧':'👶')+'</div>'+
       '<div class="baby-row-info">'+
-        '<div class="baby-row-name">'+(b.name||'宝宝')+(active?' <span style="font-size:10px;color:var(--blue)">当前</span>':'')+'</div>'+
+        '<div class="baby-row-name">'+(b.name||'宝宝')+'</div>'+
         '<div class="baby-row-age">'+ageTxt+'</div>'+
       '</div>'+
       '<button class="baby-row-edit" onclick="event.stopPropagation();editBaby(\''+b.id+'\')" title="编辑">✏️</button>'+
