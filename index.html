@@ -1312,7 +1312,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.5';
+var APP_VERSION = '5.2.6';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5202,9 +5202,9 @@ window.handleBabyPhoto = function(input){
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      // 压缩到 200x200
+      // 压缩到 100x100（体积小，同步快）
       var canvas = document.createElement('canvas');
-      var size = 200;
+      var size = 100;
       canvas.width = size; canvas.height = size;
       var ctx = canvas.getContext('2d');
       var ratio = Math.min(size/img.width, size/img.height);
@@ -5651,10 +5651,10 @@ function ghApi(method, path, body){
     opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
     opt.body = parts.join('&');
   }
-  // 带超时（20s）的 fetch，避免手机网络卡死
+  // 带超时（15s）的 fetch，避免手机网络卡死
   var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   if(ctrl) opt.signal = ctrl.signal;
-  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 20000) : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 15000) : null;
   return fetch(url, opt).then(function(r){
     return r.json().then(function(j){ return {ok: r.ok, j: j}; });
   }).catch(function(e){
@@ -5805,10 +5805,12 @@ function uploadSync(sha){
     }
     try{ localStorage.setItem('wbb2_sync_err', JSON.stringify(res.j).slice(0,200)); }catch(e){}
     if(res.j && res.j.message && String(res.j.message).indexOf('sha') >= 0){
-      // sha 冲突（另一设备已更新）→ 清缓存，走完整同步拉取最新再合并
+      // sha 冲突（另一设备已更新）→ 清缓存重试一次完整同步（最多1次，防死循环）
+      if(window.__syncRetry){ throw new Error('同步冲突，请稍后再试'); }
+      window.__syncRetry = true;
       syncState.sha = null;
       saveSyncState();
-      return doSync(true);
+      return doSync(true).then(function(r){ window.__syncRetry = false; return r; });
     }
     throw new Error((res.j && (res.j.message || res.j.error)) || '上传失败');
   });
