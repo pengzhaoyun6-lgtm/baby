@@ -670,9 +670,10 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     <div class="chart-box">
       <div id="chartContainer"></div>
       <div class="chart-legend">
-        <span class="legend-item"><span class="legend-band" style="background:rgba(74,154,232,.12);border:1px solid #A8D4F7"></span>WHO正常范围</span>
-        <span class="legend-item"><span class="legend-line" style="background:#A0AEC0"></span>WHO中位数</span>
-        <span class="legend-item"><span class="legend-line" style="background:#4A9AE8"></span>宝宝</span>
+        <span class="legend-item"><span class="legend-line" style="background:#B0BEC5"></span>P3 P10 P25</span>
+        <span class="legend-item"><span class="legend-line" style="background:#78909C"></span>P50中位</span>
+        <span class="legend-item"><span class="legend-line" style="background:#B0BEC5"></span>P75 P90 P97</span>
+        <span class="legend-item"><span class="legend-line" style="background:#4A9AE8"></span>宝宝实测</span>
       </div>
     </div>
     <div class="card">
@@ -1310,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.2';
+var APP_VERSION = '5.3.3';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -3214,7 +3215,31 @@ function renderGrowthChart(){
   var gender = (b && b.gender==='girl') ? 'girl' : 'boy';
   var whoKey = key==='headCirc' ? 'head' : key;  // WHO 键名：head（头围）≠ headCirc（记录字段）
   var who = WHO[gender][whoKey] || { p3:[], p50:[], p97:[] };
+  // WHO 7 百分位：P3/P50/P97 为官方数据，P10/P25/P75/P90 用对数正态插值（Z: -1.282/-0.674/+0.674/+1.282）
+  function whoPct(p3, p50, p97){
+    var Z = { p3:-1.881, p10:-1.282, p25:-0.674, p50:0, p75:0.674, p90:1.282, p97:1.881 };
+    var ln3=Math.log(p3), ln50=Math.log(p50), ln97=Math.log(p97);
+    var out = {};
+    Object.keys(Z).forEach(function(k){
+      var z = Z[k];
+      var lnv;
+      if(z<=0) lnv = ln3 + (ln50-ln3) * ((z-(-1.881))/(0-(-1.881)));
+      else     lnv = ln50 + (ln97-ln50) * (z/1.881);
+      out[k] = Math.exp(lnv);
+    });
+    return out;
+  }
+  function whoSeries(arrP3, arrP50, arrP97){
+    var out = { p3:[],p10:[],p25:[],p50:[],p75:[],p90:[],p97:[] };
+    for(var m=0;m<arrP3.length;m++){
+      var p = whoPct(arrP3[m], arrP50[m], arrP97[m]);
+      Object.keys(p).forEach(function(k){ out[k].push(p[k]); });
+    }
+    return out;
+  }
+  var whoAll = null;
   var hasWho = !!(who && who.p3 && who.p3.length);
+  if(hasWho) whoAll = whoSeries(who.p3, who.p50, who.p97);
   var container = document.getElementById('chartContainer');
 
   var recs = data.filter(function(g){ return g[key] && g[key]>0; })
@@ -3227,8 +3252,8 @@ function renderGrowthChart(){
     return;
   }
 
-  // 画布参数
-  var W=640, H=340, P={top:26,right:30,bottom:44,left:48};
+  // 画布参数（加大：H 340→520，更清晰）
+  var W=700, H=520, P={top:30,right:34,bottom:48,left:56};
   var cw=W-P.left-P.right, ch=H-P.top-P.bottom;
   var maxMonth = Math.max(24, Math.ceil((recs[recs.length-1].months+2)/3)*3);
 
@@ -3288,29 +3313,35 @@ function renderGrowthChart(){
     svg.appendChild(vl);
   }
 
-  // WHO 正常范围带（P3-P97）——headCirc 无 WHO 数据时跳过
-  if(hasWho){
-    var band=document.createElementNS(svgNS,'path');
-    var d='M '+x(0)+' '+y(who.p3[0]);
-    for(var i=1;i<who.p3.length;i++) d+=' L '+x(i)+' '+y(who.p3[i]);
-    for(var j=who.p97.length-1;j>=0;j--) d+=' L '+x(j)+' '+y(who.p97[j]);
-    d+=' Z';
-    band.setAttribute('d',d);
-    band.setAttribute('fill','rgba(74,154,232,0.10)');
-    band.setAttribute('stroke','#A8D4F7');
-    band.setAttribute('stroke-width','0.8');
-    svg.appendChild(band);
-
-    // WHO P50 中位线
-    var med=document.createElementNS(svgNS,'path');
-    var md='M '+x(0)+' '+y(who.p50[0]);
-    for(var k=1;k<who.p50.length;k++) md+=' L '+x(k)+' '+y(who.p50[k]);
-    med.setAttribute('d',md);
-    med.setAttribute('fill','none');
-    med.setAttribute('stroke',cMed);
-    med.setAttribute('stroke-width','1.5');
-    med.setAttribute('stroke-dasharray','5,4');
-    svg.appendChild(med);
+  // WHO 7 百分位虚线（P3/P10/P25 浅灰细虚线，P50 深灰稍粗，P75/P90/P97 浅灰细虚线）
+  if(hasWho && whoAll){
+    var pctOrder = ['p3','p10','p25','p50','p75','p90','p97'];
+    var pctStyle = { p3:{c:'#B0BEC5',w:1,d:'3,3'}, p10:{c:'#B0BEC5',w:1,d:'3,3'}, p25:{c:'#B0BEC5',w:1.2,d:'3,3'},
+                     p50:{c:'#78909C',w:2,d:'6,4'},
+                     p75:{c:'#B0BEC5',w:1.2,d:'3,3'}, p90:{c:'#B0BEC5',w:1,d:'3,3'}, p97:{c:'#B0BEC5',w:1,d:'3,3'} };
+    pctOrder.forEach(function(pk){
+      var arr = whoAll[pk];
+      if(!arr || !arr.length) return;
+      var st = pctStyle[pk];
+      var line = document.createElementNS(svgNS,'path');
+      var pd = 'M '+x(0)+' '+y(arr[0]);
+      for(var pi=1;pi<arr.length;pi++) pd += ' L '+x(pi)+' '+y(arr[pi]);
+      line.setAttribute('d',pd);
+      line.setAttribute('fill','none');
+      line.setAttribute('stroke',st.c);
+      line.setAttribute('stroke-width',String(st.w));
+      line.setAttribute('stroke-dasharray',st.d);
+      svg.appendChild(line);
+      // P50 中位线标注
+      if(pk==='p50'){
+        var lb=document.createElementNS(svgNS,'text');
+        lb.setAttribute('x',W-P.right-2); lb.setAttribute('y',y(arr[24])-4);
+        lb.setAttribute('text-anchor','end'); lb.setAttribute('font-size','10');
+        lb.setAttribute('fill','#78909C');
+        lb.textContent='P50';
+        svg.appendChild(lb);
+      }
+    });
   }
 
   // 宝宝数据折线
@@ -4767,12 +4798,17 @@ function tagColor(tag){
 /* =====================================================================
  * 首页（🏠）—— 状态卡 + 今日任务 + 今日概览 + 最近成长 + AI助手
  * ===================================================================== */
+function latestGrowthRec(arr){
+  if(!arr || !arr.length) return null;
+  var sorted = arr.slice().sort(function(a,b){ return a.date>b.date?-1:1; });
+  return sorted[0];
+}
 function renderHome(){
   var baby = DB.getBaby();
   var ageMon = baby && baby.birthday ? monthDiff(new Date(baby.birthday), new Date()) : 3;
   var ageLabel = ageMon<1 ? '不满1个月' : ageMon+'个月';
   var growth = DB.getGrowth();
-  var lastG = growth.length ? growth[growth.length-1] : null;
+  var lastG = latestGrowthRec(growth);  // 按日期取最新（补录/迁移数据也能正确显示）
   var td = todayStr();
 
   // 状态卡
@@ -4919,8 +4955,8 @@ function renderHome(){
   stage.cats.forEach(function(c){ c.items.forEach(function(it){ msNames[it.id]=it.name; }); });
   msDone.sort(function(a,b){ return (a.date||'')<(b.date||'')?1:-1; });
   if(growth.length){
-    var g = growth[growth.length-1];
-    htmlR += '<div class="home-recent">📏 '+dateStr(new Date(g.ts))+'：体重'+ (g.weight||'--') +'kg · 身高'+ (g.height||'--') +'cm'+
+    var g = latestGrowthRec(growth);
+    htmlR += '<div class="home-recent">📏 '+esc(g.date||'')+'：体重'+ (g.weight||'--') +'kg · 身高'+ (g.height||'--') +'cm'+
       (g.headCirc?' · 头围'+g.headCirc+'cm':'') +'</div>';
   }
   msDone.slice(0,3).forEach(function(m){
