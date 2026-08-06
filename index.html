@@ -1313,7 +1313,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.2.2';
+var APP_VERSION = '5.2.3';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5628,23 +5628,26 @@ function unpackAll(data){
   }
 }
 
-/* Gitee Contents API 调用（全部参数走 query，规避 CORS 预检限制） */
+/* Gitee Contents API 调用：GET 走 query；PUT/POST 走 form-urlencoded body（避免 URL 超长导致 load failed） */
 function ghApi(method, path, body){
   var url = 'https://gitee.com/api/v5/repos/' + SYNC_REPO + '/contents/' + path + '?access_token=' + encodeURIComponent(getSyncToken());
-  // 把 body 参数合并进 query string（Gitee CORS 预检不放开 content-type 头，只能全走 query）
-  if(body){
-    for(var k in body){
-      if(body.hasOwnProperty(k)) url += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(body[k]);
-    }
-  }
   var opt = {
     method: method,
     headers: { 'Accept': 'application/json' }
   };
-  // 带超时（15s）的 fetch，避免手机网络卡死
+  // 写操作：参数放 body（form-urlencoded），URL 保持短小——真实数据（含照片）很大，塞 query 会超长被拒
+  if(body){
+    var parts = [];
+    for(var k in body){
+      if(body.hasOwnProperty(k)) parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(body[k]));
+    }
+    opt.headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    opt.body = parts.join('&');
+  }
+  // 带超时（20s）的 fetch，避免手机网络卡死
   var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
   if(ctrl) opt.signal = ctrl.signal;
-  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 15000) : null;
+  var timer = ctrl ? setTimeout(function(){ ctrl.abort(); }, 20000) : null;
   return fetch(url, opt).then(function(r){
     return r.json().then(function(j){ return {ok: r.ok, j: j}; });
   }).catch(function(e){
