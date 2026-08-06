@@ -923,6 +923,18 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
     <div class="ai-report-grid">
       <button class="ai-report-btn" onclick="showWeeklyReport()"><span class="arb-icon">📊</span><span class="arb-title">成长周报</span><span class="arb-sub">本周总结</span></button>
       <button class="ai-report-btn" onclick="showMonthlyReport()"><span class="arb-icon">📅</span><span class="arb-title">成长月报</span><span class="arb-sub">本月总结</span></button>
+      <button class="ai-report-btn" onclick="toggleDocImport()"><span class="arb-icon">📄</span><span class="arb-title">资料识别入库</span><span class="arb-sub">体检/病历/疫苗</span></button>
+    </div>
+    <div class="ai-doc-import" id="aiDocImport" style="display:none">
+      <div style="font-size:12.5px;color:var(--text-sub);line-height:1.6;margin-bottom:8px">
+        把 <b>体检报告 / 病历 / 疫苗本 / 过敏史 / 用药记录</b> 的文字（可用别的AI从图片提取）粘贴到下面，点「🤖 识别入库」，AI 自动写入对应记录：<br>
+        📋 体检（体重/身高/头围/发育评估）· 💉 疫苗（已接种剂次）· ⚠️ 异常事件 · 💊 用药 · 🌾 过敏史 · 📏 生长数据
+      </div>
+      <textarea id="aiDocText" placeholder="粘贴体检报告/病历/疫苗文字…" style="width:100%;min-height:120px;border:1px solid var(--border);border-radius:10px;padding:10px;font-size:13px;background:var(--bg);resize:vertical"></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+        <button class="btn-primary" style="flex:1" onclick="parseDocToRecords()">🤖 识别入库</button>
+        <span id="aiDocStatus" style="font-size:11.5px;color:var(--text-faint)"></span>
+      </div>
     </div>
     <div class="ai-chat-box">
       <div class="ai-msg-area" id="aiMsgArea2">
@@ -1311,7 +1323,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.7';
+var APP_VERSION = '5.3.8';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5577,6 +5589,149 @@ function callDeepSeek(key, messages, onOk, onErr){
 
 window.openAIChat = function(){ switchTab('ai'); };
 window.closeAIChat = function(){};
+
+/* ============ 📄 资料识别入库（体检/病历/疫苗/过敏/用药/生长） ============ */
+window.toggleDocImport = function(){
+  var el = document.getElementById('aiDocImport');
+  if(!el) return;
+  var show = el.style.display === 'none';
+  el.style.display = show ? '' : 'none';
+  if(show) setTimeout(function(){ var t = document.getElementById('aiDocText'); if(t) t.focus(); }, 100);
+};
+/* 识别并写入：AI 返回结构化 JSON → 写入体检/疫苗/异常/用药/过敏/生长 */
+window.parseDocToRecords = function(){
+  var doc = document.getElementById('aiDocText').value.trim();
+  if(!doc){ toast('请先粘贴资料文字'); return; }
+  var key = getAIKey();
+  if(!key){ toast('⚠️ 未配置 AI Key'); return; }
+  document.getElementById('aiDocStatus').textContent = '🤖 识别中…（约10秒）';
+  var prompt =
+    '你是婴幼儿健康档案录入助手。从下面提供的资料文字中提取所有信息，返回 JSON 对象（不要 markdown 代码块），字段如下：\n' +
+    '{\n' +
+    ' "growth": [{"date":"YYYY-MM-DD","weight":6.5,"height":61,"headCirc":39.5,"note":""}],  // 生长测量数据（体重kg/身高cm/头围cm），无则空数组\n' +
+    ' "exams": [{"date":"YYYY-MM-DD","ageLabel":"如3个月","weight":6.5,"height":61,"headCirc":39.5,"note":"体检机构/医生建议等"}],  // 体检记录\n' +
+    ' "vaccines": [{"name":"乙肝疫苗","dose":"第2剂","date":"YYYY-MM-DD"}],  // 已接种疫苗（名称需匹配：乙肝/卡介苗/脊灰/百白破/流脑/麻腮风/乙脑/白破/13价肺炎/五联/Hib/轮状/手足口/流感/水痘/甲肝等）\n' +
+    ' "meds": [{"date":"YYYY-MM-DD","type":"用药或就医类型","note":"药物名/剂量/说明"}],  // 用药/就医\n' +
+    ' "allergies": [{"date":"YYYY-MM-DD","source":"过敏源","type":"类型如食物/药物/其他","note":""}],  // 过敏史\n' +
+    ' "events": [{"date":"YYYY-MM-DD","type":"发烧/摔跤/呕吐/腹泻/磕碰/其他","note":"详情"}],  // 异常事件\n' +
+    ' "summary": "用一句话总结这次识别到了什么"\n' +
+    '}\n' +
+    '规则：1) 资料里没有的类别返回空数组 2) 日期尽量完整，只有年月就补当月1日 3) 数字保留原值 4) 疫苗名称和剂次尽量标准化 5) 不确定的放note里说明\n' +
+    '资料文字：\n---\n' + doc.slice(0, 6000);
+  callDeepSeek(key, [
+    {role:'system', content:'你是婴幼儿健康档案录入助手，严格只输出 JSON。'},
+    {role:'user', content: prompt}
+  ], function(reply){
+    try{
+      var m = reply.match(/\{[\s\S]*\}/);
+      if(!m) throw new Error('no json');
+      var data = JSON.parse(m[0]);
+      applyDocRecords(data);
+      document.getElementById('aiDocStatus').textContent = '✅ ' + (data.summary || '识别完成');
+    }catch(e){
+      document.getElementById('aiDocStatus').textContent = '❌ 识别失败，请手动填写';
+      toast('识别失败：' + reply.slice(0,60));
+    }
+  }, function(err){
+    document.getElementById('aiDocStatus').textContent = '❌ 识别失败：' + err;
+  });
+};
+/* 把 AI 识别的结构化数据写入对应模块（全部去重，不覆盖已有） */
+function applyDocRecords(data){
+  var added = { growth:0, exams:0, vaccines:0, meds:0, allergies:0, events:0 };
+  var baby = DB.getBaby();
+
+  // 📏 生长数据（按日期去重：同日期已存在则跳过）
+  (data.growth||[]).forEach(function(g){
+    if(!g || !g.date) return;
+    var gs = DB.getGrowth();
+    var dup = gs.some(function(x){ return x.date === g.date; });
+    if(dup) return;
+    gs.push({ id: uid(), date: g.date, ageLabel: g.ageLabel||'', weight: g.weight||0, height: g.height||0, headCirc: g.headCirc||0, note: g.note||'' });
+    DB.setGrowth(gs);
+    added.growth++;
+  });
+
+  // 📋 体检记录
+  (data.exams||[]).forEach(function(e){
+    if(!e || !e.date) return;
+    var es = DB.getExams();
+    var dup = es.some(function(x){ return x.date === e.date; });
+    if(dup) return;
+    es.push({ id: uid(), date: e.date, ageLabel: e.ageLabel||'', weight: e.weight||0, height: e.height||0, headCirc: e.headCirc||0, note: e.note||'' });
+    DB.setExams(es);
+    added.exams++;
+    // 体检同时写入生长记录（曲线图联动）——同日期已有生长则跳过
+    var gs2 = DB.getGrowth();
+    if(!gs2.some(function(x){ return x.date === e.date; })){
+      gs2.push({ id: uid(), date: e.date, ageLabel: e.ageLabel||'', weight: e.weight||0, height: e.height||0, headCirc: e.headCirc||0, note: '体检' });
+      DB.setGrowth(gs2);
+      added.growth++;
+    }
+  });
+
+  // 💉 疫苗（匹配 VACCINE_SCHEDULE 的 id 写日期；未知名称跳过并计数）
+  (data.vaccines||[]).forEach(function(v){
+    if(!v || !v.name || !v.date) return;
+    var rec = DB.getVaccines() || {};
+    var matched = null;
+    VACCINE_SCHEDULE.forEach(function(sv){
+      if(matched) return;
+      if(v.name.indexOf(sv.name) >= 0){
+        if(!v.dose || v.dose === sv.dose || (sv.dose && v.dose && v.dose.indexOf(sv.dose.replace('第','').replace('剂','')) >= 0)){
+          matched = sv;
+        }
+      }
+    });
+    if(matched && !rec[matched.id]){
+      rec[matched.id] = v.date;
+      DB.setVaccines(rec);
+      added.vaccines++;
+    }
+  });
+
+  // 💊 用药/就医
+  (data.meds||[]).forEach(function(m){
+    if(!m || !m.date || !m.note) return;
+    var ms = DB.getMeds();
+    var dup = ms.some(function(x){ return x.date === m.date && x.note === m.note; });
+    if(dup) return;
+    ms.push({ id: uid(), date: m.date, type: m.type||'用药', note: m.note });
+    DB.setMeds(ms);
+    added.meds++;
+  });
+
+  // 🌾 过敏史
+  (data.allergies||[]).forEach(function(a){
+    if(!a || !a.source) return;
+    var as = DB.getAllergies();
+    var dup = as.some(function(x){ return x.source === a.source; });
+    if(dup) return;
+    as.push({ id: uid(), date: a.date||'', source: a.source, type: a.type||'其他', note: a.note||'' });
+    DB.setAllergies(as);
+    added.allergies++;
+  });
+
+  // ⚠️ 异常事件
+  (data.events||[]).forEach(function(ev){
+    if(!ev || !ev.date || !ev.type) return;
+    var es = DB.getEvents();
+    var dup = es.some(function(x){ return x.date === ev.date && x.type === ev.type; });
+    if(dup) return;
+    es.push({ id: uid(), date: ev.date, type: ev.type, note: ev.note||'' });
+    DB.setEvents(es);
+    added.events++;
+  });
+
+  // 刷新界面
+  renderExams(); renderMeds(); renderAllergies(); renderEvents(); renderVaccines(); renderVaccineRec(); renderGrowthChart(); renderGrowthList(); renderHome();
+  var total = added.growth + added.exams + added.vaccines + added.meds + added.allergies + added.events;
+  if(total > 0){
+    toast('📄 已入库 ' + total + ' 条：生长'+added.growth+' 体检'+added.exams+' 疫苗'+added.vaccines+' 用药'+added.meds+' 过敏'+added.allergies+' 事件'+added.events);
+  }else{
+    toast('⚠️ 没有新数据可写入（可能已存在）');
+  }
+}
 
 function aiAppend(area, role, text){
   var div = document.createElement('div');
