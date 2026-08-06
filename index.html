@@ -1311,7 +1311,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.5';
+var APP_VERSION = '5.3.6';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -4571,7 +4571,7 @@ window.readInsFile = function(input){
   };
   reader.readAsText(file, 'utf-8');
 };
-/* 🤖 智能识别：从保单文档提取 险种/名称/保额/购买时间/失效时间/缴费日 */
+/* 🤖 智能识别：从保单文档提取多份保单（险种/名称/保额/购买时间/失效时间/缴费日） */
 window.parseInsDoc = function(){
   var doc = document.getElementById('insDoc').value.trim();
   if(!doc){ toast('请先上传或粘贴保单文档'); return; }
@@ -4582,19 +4582,33 @@ window.parseInsDoc = function(){
     return;
   }
   document.getElementById('insDocStatus').textContent = '🤖 正在分析保单…（约10秒）';
-  var prompt = '你是保单信息提取助手。从下面的保单文档中提取信息，只返回 JSON（不要 markdown 代码块），字段如下：\n' +
-    '{"name":"保险名称","type":"险种(只能填:医疗/重疾/意外/教育金/其他)","amount":"保额,如200万","purchaseDate":"购买时间YYYY-MM-DD,没有则空","expiryDate":"保障失效时间YYYY-MM-DD,没有则空","dueDate":"年缴费日MM-DD(格式化为YYYY-MM-DD用今年年份,没有则空)","phone":"理赔电话","note":"其他重要备注"}\n' +
-    '找不到的字段填空字符串。保单文档：\n---\n' + doc.slice(0, 3000);
+  var prompt = '你是保单信息提取助手。从下面的保单文档中提取【所有】保单信息，返回 JSON 数组（不要 markdown 代码块），每份保单一个对象，字段如下：\n' +
+    '[{"name":"保险名称","type":"险种(只能填:医疗/重疾/意外/教育金/其他)","amount":"保额,如200万","purchaseDate":"购买时间YYYY-MM-DD,没有则空","expiryDate":"保障失效时间YYYY-MM-DD,没有则空","dueDate":"年缴费日MM-DD(格式化为YYYY-MM-DD用今年年份,没有则空)","phone":"理赔电话","note":"其他重要备注(如续保规则/等待期/免赔规则)","summary":"该保单的核心保障责任摘要,100字以内"}]\n' +
+    '文档中有几份保单就返回几个对象。如果只有一份，也返回含一个对象的数组。找不到的字段填空字符串。保单文档：\n---\n' + doc.slice(0, 6000);
   callDeepSeek(key, [
-    {role:'system', content:'你是保单信息提取助手，严格只输出 JSON。'},
+    {role:'system', content:'你是保单信息提取助手，严格只输出 JSON 数组。'},
     {role:'user', content: prompt}
   ], function(reply){
     try{
       // 提取 JSON（容错：去掉 markdown 代码块）
-      var m = reply.match(/\{[\s\S]*\}/);
-      if(!m){ throw new Error('no json'); }
-      var data = JSON.parse(m[0]);
-      fillInsForm(data);
+      var m = reply.match(/\[[\s\S]*\]/);
+      var data = null;
+      if(m){
+        data = JSON.parse(m[0]);
+      }else{
+        // 兼容单个对象返回
+        var m2 = reply.match(/\{[\s\S]*\}/);
+        if(!m2) throw new Error('no json');
+        data = [JSON.parse(m2[0])];
+      }
+      if(!Array.isArray(data) || !data.length) throw new Error('empty');
+      if(data.length === 1){
+        // 单份：填表单让用户确认
+        fillInsForm(data[0]);
+      }else{
+        // 多份：直接全部保存（点一下完成）
+        saveInsurancesFromDoc(data, doc);
+      }
     }catch(e){
       document.getElementById('insDocStatus').textContent = '❌ 识别失败，请手动填写';
       toast('识别失败：' + reply.slice(0,60));
@@ -4603,6 +4617,43 @@ window.parseInsDoc = function(){
     document.getElementById('insDocStatus').textContent = '❌ 识别失败：' + err;
   });
 };
+/* 多份保单直接保存（识别出 N 份 → 一次全部入库） */
+function saveInsurancesFromDoc(list, doc){
+  var inss = DB.getInsurances();
+  var added = 0;
+  list.forEach(function(d){
+    if(!d.name){ return; }
+    var note = [];
+    if(d.phone) note.push('理赔电话：' + d.phone);
+    if(d.summary) note.push('保障摘要：' + d.summary);
+    if(d.note) note.push(d.note);
+    // 去重：同保单号或同名+同失效日已存在则跳过
+    var dup = inss.some(function(x){
+      return x.name === d.name && (x.expiry === d.expiryDate || x.purchase === d.purchaseDate);
+    });
+    if(dup) return;
+    inss.push({
+      id: uid(), name: d.name,
+      type: d.type || '',
+      amount: (d.amount||'').trim(),
+      purchase: d.purchaseDate || '',
+      due: d.dueDate || '',
+      expiry: d.expiryDate || '',
+      note: note.join('；'),
+      doc: doc
+    });
+    added++;
+  });
+  if(added){
+    DB.setInsurances(inss);
+    renderInsurance();
+    document.getElementById('insDocStatus').textContent = '✅ 识别出 ' + list.length + ' 份保单，已保存 ' + added + ' 份（重复已跳过）';
+    toast('🛡️ 已保存 ' + added + ' 份保单');
+  }else{
+    document.getElementById('insDocStatus').textContent = '⚠️ 未识别到新保单（可能已存在或名称缺失）';
+    toast('⚠️ 没有新保单可保存');
+  }
+}
 function fillInsForm(data){
   var nameEl = document.getElementById('insName');
   var typeEl = document.getElementById('insType');
