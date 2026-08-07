@@ -1350,7 +1350,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.14';
+var APP_VERSION = '5.3.15';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5805,104 +5805,207 @@ function getAIKey(){
 window.saveAIKey = function(){ /* 已内嵌 Key，此函数保留为空（兼容旧调用） */ };
 window.testAIKey = function(){ toast('✅ AI 已内置可用，无需配置'); };
 
-function buildBabyContext(){
+/* 问题路由：根据用户问题判断需要读哪些模块（按需注入，避免全量噪音） */
+function routeModules(q){
+  var mods = ['base','today'];  // 宝宝档案+今日汇总总是带上（轻量且上下文必需）
+  if(/奶|喂|吃|喝|瓶|母乳|奶粉|ml|毫升/.test(q)) mods.push('feeds');
+  if(/睡|醒|夜|觉|起|眠/.test(q)) mods.push('sleeps');
+  if(/体重|身高|头围|生长|曲线|发育|百分位|达标|长得好/.test(q)) mods.push('growth');
+  if(/疫苗|打针|接种|自费|脊灰|百白破|乙肝|流感|轮状|手足口|水痘|甲肝|麻腮风|乙脑/.test(q)) mods.push('vaccines');
+  if(/保险|理赔|报销|保单|赔付|报哪份|报销|保险电话/.test(q)) mods.push('inss');
+  if(/档案|体检|儿保|检查|基因|孕检|髋|听力|视力|黄疸|体检报告/.test(q)) mods.push('hrecs');
+  if(/药|过敏|咳嗽|湿疹|用药/.test(q)) mods.push('meds','allergies');
+  if(/发烧|摔|吐|腹泻|异常|磕碰|受伤|急诊/.test(q)) mods.push('events');
+  if(/尿|便|拉|屎|大便|小便/.test(q)) mods.push('diapers');
+  if(/维生|AD|D3|钙|铁|锌/.test(q)) mods.push('vits');
+  if(/里程碑|会翻身|会坐|会爬|会走|会叫|大运动|精细/.test(q)) mods.push('ms');
+  return mods;
+}
+/* 按模块生成 AI 上下文（每个模块的数据都是从真实记录程序算出的，绝对准确） */
+function ctxModules(mods){
   var baby = DB.getBaby() || {};
   var lines = [];
-  lines.push('【宝宝档案】');
-  var ageMon = baby.birthday ? monthDiff(new Date(baby.birthday), new Date()) : '未知';
-  lines.push('月龄：' + (ageMon==='未知'?'未知':ageMon+'个月') + '，性别：' + (baby.gender==='girl'?'女宝':'男宝') + '，记录人：' + (baby.recorder||'妈妈'));
-  var growth = DB.getGrowth();
-  if(growth.length){
-    var g = growth[growth.length-1];
-    lines.push('最近生长（'+dateStr(new Date(g.ts))+'）：体重'+(g.weight||'--')+'kg，身高'+(g.height||'--')+'cm'+(g.headCirc?'，头围'+g.headCirc+'cm':''));
-  }
   var td = todayStr();
-  var today = new Date();
-  var d7 = new Date(today.getTime()-6*86400000);
-  var sd7 = dateStr(d7);
-
-  // 喂养近7天
-  var feeds = DB.getFeeds().filter(function(f){ var d=dateStr(new Date(f.ts)); return d>=sd7 && d<=td; });
-  if(feeds.length){
-    var total=0; feeds.forEach(function(f){ total+=f.value||0; });
-    var perDay = Math.round(total/feeds.length);
-    lines.push('【喂养·近7天】共'+feeds.length+'次，总量'+total+'ml，日均'+perDay+'ml，平均每次'+Math.round(total/feeds.length)+'ml');
-    // 明细：按日期分组列出每次时间+量（AI 可回答"昨天几点喝了多少"）
-    var byDay = {};
-    feeds.forEach(function(f){
-      var d = dateStr(new Date(f.ts));
-      if(!byDay[d]) byDay[d] = [];
-      byDay[d].push(f);
-    });
-    var days = Object.keys(byDay).sort().reverse();
-    days.forEach(function(d){
-      var list = byDay[d].sort(function(a,b){ return a.ts<b.ts?-1:1; }).map(function(f){
-        return timeStr(new Date(f.ts))+(f.value?(' '+f.value+'ml'):'');
-      }).join('、');
-      lines.push('  '+d+'：'+list);
-    });
-  }else{
-    lines.push('【喂养】近7天暂无记录');
+  var ageMon = baby.birthday ? monthDiff(new Date(baby.birthday), new Date()) : null;
+  if(mods.indexOf('base') >= 0){
+    lines.push('【宝宝档案】月龄：' + (ageMon==null?'未知':ageMon+'个月') + '，性别：' + (baby.gender==='girl'?'女宝':'男宝') + '，生日：' + (baby.birthday||'--') + '，记录人：' + (baby.recorder||'妈妈'));
+    if(baby.name) lines[0] += '，姓名：' + baby.name;
   }
-  // 睡眠近7天
-  var sleeps = DB.getSleeps().filter(function(s){ return s.date>=sd7 && s.date<=td && s.start && s.end; });
-  if(sleeps.length){
-    var mins=[];
-    sleeps.forEach(function(s){ var d=timeToMin(s.end)-timeToMin(s.start); if(d<0)d+=1440; mins.push(d); });
-    var avg = Math.round(mins.reduce(function(a,b){return a+b;},0)/mins.length);
-    var starts = sleeps.map(function(s){ return timeToMin(s.start); }).sort(function(a,b){return a-b;});
-    var midStart = starts[Math.floor(starts.length/2)];
-    lines.push('【睡眠·近7天】'+sleeps.length+'晚，平均时长'+durationText(avg)+'，中位入睡'+minToTime(midStart));
-  }else{
-    lines.push('【睡眠】近7天暂无完整记录');
-  }
-  // 疫苗
-  var vrecords = DB.getVaccines()||{};
-  var doneList = [], nextList = [];
-  VACCINE_SCHEDULE.forEach(function(v){
-    if(vrecords[v.id]) doneList.push(v.name+v.dose);
-    else if(ageMon!=='未知' && ageMon >= v.ageMon) nextList.push(v.name+v.dose+'('+v.age+')');
-  });
-  if(doneList.length) lines.push('【疫苗】已接种：'+doneList.join('、'));
-  if(nextList.length) lines.push('【疫苗·待接种】'+nextList.slice(0,3).join('、'));
-  // 里程碑
-  var ms = DB.getMilestones()||{};
-  var msNames={};
-  getStage(MS_STAGES).cats.forEach(function(c){ c.items.forEach(function(it){ msNames[it.id]=it.name; }); });
-  var msDone=[];
-  Object.keys(ms).forEach(function(k){ if(ms[k].status==='achieved') msDone.push(msNames[k]||k); });
-  if(msDone.length) lines.push('【里程碑】'+msDone.join('、'));
-  // 保单
-  var inss = DB.getInsurances();
-  if(inss.length){
-    lines.push('【保单】共'+inss.length+'份：');
-    inss.forEach(function(ins){
-      var meta = [];
-      meta.push('名称:'+(ins.name||'--'));
-      meta.push('类型:'+(ins.type||'--'));
-      if(ins.amount) meta.push('保额:'+ins.amount);
-      if(ins.purchase) meta.push('购买时间:'+ins.purchase);
-      if(ins.due) meta.push('年缴费日:'+ins.due);
-      if(ins.expiry) meta.push('保障至:'+ins.expiry);
-      lines.push('- ' + meta.join('，'));
-      if(ins.doc){
-        lines.push('  保单详情文档：\n' + ins.doc.slice(0, 2500));
+  if(mods.indexOf('growth') >= 0){
+    var growth = DB.getGrowth();
+    if(growth.length){
+      lines.push('【生长记录】共'+growth.length+'条：');
+      growth.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }).forEach(function(g){
+        var parts = [];
+        if(g.date) parts.push(g.date);
+        if(g.weight) parts.push('体重'+g.weight+'kg');
+        if(g.height) parts.push('身高'+g.height+'cm');
+        if(g.headCirc) parts.push('头围'+g.headCirc+'cm');
+        if(g.note) parts.push('('+g.note+')');
+        lines.push('- ' + parts.join(' '));
+      });
+      var latest = growth.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }).pop();
+      if(latest && latest.date){
+        var gender = (baby.gender==='girl') ? 'girl' : 'boy';
+        var gMonths = monthDiff(new Date(baby.birthday), new Date(latest.date));
+        if(gMonths != null && gMonths >= 0 && gMonths < 24){
+          var pctParts = [];
+          [['weight','体重','kg'],['height','身高','cm'],['headCirc','头围','cm']].forEach(function(pair){
+            var key = pair[0], label = pair[1], unit = pair[2];
+            var whoKey = key==='headCirc' ? 'head' : key;
+            var who = (WHO[gender] && WHO[gender][whoKey]) || null;
+            var v = latest[key];
+            if(who && v && who.p50 && who.p50[gMonths]){
+              var p50 = who.p50[gMonths], p3 = who.p3[gMonths], p97 = who.p97[gMonths];
+              var pct = 'P50';
+              if(v < p3) pct = '低于P3';
+              else if(v < p50){ var r=(v-p3)/(p50-p3); pct = 'P' + Math.round(3+r*47); }
+              else if(v < p97){ var r=(v-p50)/(p97-p50); pct = 'P' + Math.round(50+r*47); }
+              else pct = '高于P97';
+              pctParts.push(label+' '+v+unit+'≈'+pct);
+            }
+          });
+          if(pctParts.length) lines.push('【生长·程序计算】'+latest.date+'：'+pctParts.join('，'));
+        }
       }
+    } else { lines.push('【生长记录】暂无'); }
+  }
+  if(mods.indexOf('feeds') >= 0){
+    var feeds = DB.getFeeds();
+    if(feeds.length){
+      var byDay = {};
+      feeds.forEach(function(f){ var d=dateStr(new Date(f.ts)); if(!byDay[d]) byDay[d]=[]; byDay[d].push(f); });
+      lines.push('【喂养记录】共'+feeds.length+'条：');
+      Object.keys(byDay).sort().reverse().forEach(function(d){
+        var list = byDay[d].sort(function(a,b){ return a.ts<b.ts?-1:1; }).map(function(f){
+          return timeStr(new Date(f.ts))+(f.value?(' '+f.value+'ml'):'');
+        }).join('、');
+        lines.push('- '+d+'：'+list);
+      });
+      var yest = new Date(); yest.setDate(yest.getDate()-1);
+      function cnt(ds){ return feeds.filter(function(f){ return dateStr(new Date(f.ts))===ds; }).length; }
+      function tot(ds){ var t=0; feeds.forEach(function(f){ if(dateStr(new Date(f.ts))===ds) t+=(f.value||0); }); return t; }
+      var sd7 = new Date(); sd7.setDate(sd7.getDate()-6);
+      var f7 = feeds.filter(function(f){ var d=dateStr(new Date(f.ts)); return d>=dateStr(sd7) && d<=td; });
+      var t7=0; f7.forEach(function(f){ t7+=f.value||0; });
+      lines.push('【喂养·程序计算】今日'+cnt(td)+'次共'+tot(td)+'ml；昨日'+cnt(dateStr(yest))+'次共'+tot(dateStr(yest))+'ml；近7天共'+f7.length+'次'+t7+'ml，日均'+Math.round(t7/7)+'ml');
+    } else { lines.push('【喂养记录】暂无'); }
+  }
+  if(mods.indexOf('sleeps') >= 0){
+    var sleeps = DB.getSleeps();
+    if(sleeps.length){
+      lines.push('【睡眠记录】共'+sleeps.length+'条：');
+      sleeps.slice().sort(function(a,b){ return (a.date||'').localeCompare(b.date||''); }).reverse().forEach(function(s){
+        if(s.date && s.start && s.end){
+          var dur = timeToMin(s.end)-timeToMin(s.start); if(dur<0) dur+=1440;
+          lines.push('- '+s.date+'：'+s.start+'~'+s.end+'（'+durationText(dur)+'）');
+        }
+      });
+      var mins = sleeps.filter(function(s){return s.start&&s.end;}).map(function(s){ var d=timeToMin(s.end)-timeToMin(s.start); if(d<0)d+=1440; return d; });
+      if(mins.length) lines.push('【睡眠·程序计算】平均时长'+durationText(Math.round(mins.reduce(function(a,b){return a+b;},0)/mins.length)));
+    } else { lines.push('【睡眠记录】暂无'); }
+  }
+  if(mods.indexOf('vaccines') >= 0){
+    var vrecords = DB.getVaccines()||{};
+    var doneList = [], nextList = [];
+    VACCINE_SCHEDULE.forEach(function(v){
+      if(vrecords[v.id]) doneList.push(v.name+v.dose+'('+vrecords[v.id]+')');
+      else if(ageMon!=null && ageMon >= v.ageMon) nextList.push(v.name+v.dose+'('+v.age+')');
     });
+    if(doneList.length) lines.push('【疫苗·程序计算】已接种：'+doneList.join('、'));
+    if(nextList.length) lines.push('【疫苗·待接种】'+nextList.join('、'));
+    else if(!doneList.length) lines.push('【疫苗】暂无记录');
+    var cvaccs = DB.getCustomVaccines && DB.getCustomVaccines();
+    if(cvaccs && cvaccs.length) lines.push('【疫苗·自费】'+cvaccs.map(function(c){return c.name+(c.date?'('+c.date+')':'');}).join('、'));
   }
-  // 健康档案（内嵌历史背景：孕期/基因/投保告知/理赔指引/关键时间节点）
-  if(typeof DEFAULT_HEALTH_ARCHIVE !== 'undefined'){
-    lines.push('【健康档案】');
-    lines.push('宝宝：' + DEFAULT_HEALTH_ARCHIVE.baby);
-    lines.push('妈妈孕期：' + DEFAULT_HEALTH_ARCHIVE.mom);
-    lines.push('基因检测：' + DEFAULT_HEALTH_ARCHIVE.gene);
-    lines.push('投保告知提示：' + DEFAULT_HEALTH_ARCHIVE.insuranceNote);
+  if(mods.indexOf('inss') >= 0){
+    var inss = DB.getInsurances();
+    if(inss.length){
+      lines.push('【保单】共'+inss.length+'份：');
+      inss.forEach(function(ins){
+        var meta = [];
+        meta.push('名称:'+(ins.name||'--'));
+        meta.push('类型:'+(ins.type||'--'));
+        if(ins.amount) meta.push('保额:'+ins.amount);
+        if(ins.premium) meta.push('保费:'+ins.premium);
+        if(ins.purchase) meta.push('购买:'+ins.purchase);
+        if(ins.due) meta.push('年缴费日:'+ins.due);
+        if(ins.expiry) meta.push('保障至:'+ins.expiry);
+        if(ins.phone) meta.push('电话:'+ins.phone);
+        lines.push('- '+meta.join('，'));
+        if(ins.doc) lines.push('  详情：'+ins.doc.slice(0,1200));
+      });
+      if(typeof DEFAULT_INSURANCE_GUIDE !== 'undefined' && DEFAULT_INSURANCE_GUIDE.claimGuide){
+        lines.push('【理赔速查·内置】'+DEFAULT_INSURANCE_GUIDE.claimGuide.slice(0,800));
+      }
+    } else { lines.push('【保单】暂无'); }
   }
-  // 今日
-  var feedsT = DB.getFeeds().filter(function(f){ return dateStr(new Date(f.ts))===td; });
-  var vitsT = DB.getVits().filter(function(x){ return dateStr(new Date(x.ts))===td; });
-  lines.push('【今日】喂奶'+feedsT.length+'次，维生素'+(vitsT.length?vitsT.map(function(x){return x.type==='vitAD'?'AD':'D3';}).join('/'):'未记录'));
+  if(mods.indexOf('hrecs') >= 0){
+    var hrecs = DB.getHealthRecs();
+    var allHrecs = (hrecs||[]).concat(DEFAULT_HEALTH_RECORDS||[]);
+    var exams = DB.getExams();
+    if(exams.length){
+      lines.push('【体检记录】'+exams.map(function(e){
+        var p=[e.date||'']; if(e.weight)p.push('体重'+e.weight+'kg'); if(e.height)p.push('身高'+e.height+'cm'); if(e.headCirc)p.push('头围'+e.headCirc+'cm'); if(e.note)p.push(e.note); return p.join(' ');
+      }).join('；'));
+    }
+    if(allHrecs.length){
+      lines.push('【健康档案】共'+allHrecs.length+'条：');
+      ['孕检','宝宝体检','基因检测','出生信息','其他'].forEach(function(cat){
+        var g = allHrecs.filter(function(r){ return r.category===cat; });
+        if(!g.length) return;
+        g.forEach(function(r){
+          var warn = r.items && r.items.some(function(i){ return i.result==='warn'||i.result==='bad'; });
+          lines.push('- ['+cat+'] '+r.date+' '+r.title+(warn?'【⚠️需关注】':'【✅正常】'));
+          (r.items||[]).slice(0,12).forEach(function(it){
+            lines.push('    '+it.name+':'+it.value+(it.result==='bad'?'【异常】':(it.result==='warn'?'【关注】':'【正常】')));
+          });
+          if(r.conclusion) lines.push('    结论：'+r.conclusion);
+        });
+      });
+    }
+  }
+  if(mods.indexOf('meds') >= 0){
+    var meds = DB.getMeds();
+    if(meds.length) lines.push('【用药/就医】'+meds.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');}).reverse().slice(0,10).map(function(m){ return (m.date||'')+' '+(m.type||'')+' '+(m.note||''); }).join('；'));
+  }
+  if(mods.indexOf('allergies') >= 0){
+    var allergies = DB.getAllergies();
+    if(allergies.length) lines.push('【过敏史】'+allergies.map(function(a){ return (a.date||'')+' '+(a.source||'')+(a.type?'('+a.type+')':'')+(a.note?' '+a.note:''); }).join('；'));
+  }
+  if(mods.indexOf('events') >= 0){
+    var events = DB.getEvents();
+    if(events.length) lines.push('【异常事件】'+events.slice().sort(function(a,b){return (a.date||'').localeCompare(b.date||'');}).reverse().slice(0,10).map(function(e){ return (e.date||'')+' '+(e.type||'')+(e.note?'：'+e.note:''); }).join('；'));
+  }
+  if(mods.indexOf('diapers') >= 0){
+    var diapers = DB.getDiapers();
+    var peeT = diapers.filter(function(x){ return x.type==='pee' && dateStr(new Date(x.ts))===td; }).length;
+    var poopT = diapers.filter(function(x){ return x.type==='poop' && dateStr(new Date(x.ts))===td; }).length;
+    lines.push('【大小便】今日尿'+peeT+'次、便'+poopT+'次'+(diapers.length?'，历史共'+diapers.length+'条':''));
+  }
+  if(mods.indexOf('vits') >= 0){
+    var vits = DB.getVits();
+    var vitsT = vits.filter(function(x){ return dateStr(new Date(x.ts))===td; });
+    lines.push('【维生素】今日'+(vitsT.length?vitsT.map(function(x){return x.type==='vitAD'?'AD':'D3';}).join('/'):'未记录')+(vits.length?'，历史共'+vits.length+'条':''));
+  }
+  if(mods.indexOf('ms') >= 0){
+    var ms = DB.getMilestones()||{};
+    var msNames={};
+    try{ getStage(MS_STAGES).cats.forEach(function(c){ c.items.forEach(function(it){ msNames[it.id]=it.name; }); }); }catch(e){}
+    var msDone=[];
+    Object.keys(ms).forEach(function(k){ if(ms[k].status==='achieved') msDone.push(msNames[k]||k); });
+    if(msDone.length) lines.push('【里程碑】'+msDone.join('、'));
+  }
+  if(mods.indexOf('today') >= 0){
+    var fT = DB.getFeeds().filter(function(f){ return dateStr(new Date(f.ts))===td; });
+    var fTot=0; fT.forEach(function(f){ fTot+=f.value||0; });
+    var vT = DB.getVits().filter(function(x){ return dateStr(new Date(x.ts))===td; });
+    lines.push('【今日】喂奶'+fT.length+'次'+fTot+'ml，维生素'+(vT.length?'已吃':'未记录'));
+  }
   return lines.join('\n');
+}
+function buildBabyContext(){
+  return ctxModules(['base','today','feeds','sleeps','growth','vaccines','inss','hrecs','meds','allergies','events','diapers','vits','ms']);
 }
 
 function callDeepSeek(key, messages, onOk, onErr){
@@ -6401,7 +6504,7 @@ function aiSendCore(input, area){
   }
   aiAppend(area, 'user', q);
   aiTyping(area, true);
-  var ctx = buildBabyContext();
+  var ctx = ctxModules(routeModules(q));  // 按问题路由：问什么读什么（程序算好，绝对准确）
   // 显式记录指令：用户明确说"记录/记一下/登记/入档/入库"时才走记录识别；否则纯问答
   var wantRecord = /(?:记录|记一下|记下|登记|入档|入库|存档)/.test(q);
   if(wantRecord){
