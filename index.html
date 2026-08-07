@@ -1350,7 +1350,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.13';
+var APP_VERSION = '5.3.14';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1444,6 +1444,10 @@ var DB = {
   // 健康档案记录 [{id, category, date, title, hospital, items, conclusion, note}]
   getHealthRecs: function(){ return this._get(this._key('hrecs'), []); },
   setHealthRecs: function(a){ this._set(this._key('hrecs'), a); },
+
+  // 删除墓碑 {feeds:[id,...], sleeps:[...]}：同步时排除，实现"删除也能同步"
+  getDeleted: function(){ return this._get(this._key('del'), {}); },
+  setDeleted: function(a){ this._set(this._key('del'), a || {}); },
 
   // 里程碑
   getMilestones: function(){ return this._get(this._key('ms'), {}); },
@@ -1672,6 +1676,7 @@ var WHO = {
 function pad(n){ return (n<10?'0':'')+n; }
 function todayStr(){ var d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 function dateStr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function timeStr(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
 function nowTime(){ var d=new Date(); return pad(d.getHours())+':'+pad(d.getMinutes()); }
 function monthDiff(d1, d2){
   var m=(d2.getFullYear()-d1.getFullYear())*12 + (d2.getMonth()-d1.getMonth());
@@ -1958,9 +1963,20 @@ window.saveFeedRecord = function(){
   renderFeed();
   toast('🍼 瓶喂 ' + state.feedValue + 'ml 已记录');
 };
+/* 记录删除墓碑：同步时排除该 id（实现"删除也能同步"） */
+function markDeleted(key, id){
+  if(!id) return;
+  try{
+    var del = DB.getDeleted();
+    if(!del[key]) del[key] = [];
+    if(del[key].indexOf(id) === -1) del[key].push(id);
+    DB.setDeleted(del);
+  }catch(e){}
+}
 window.delFeed = function(id){
   var feeds = DB.getFeeds().filter(function(f){ return f.id!==id; });
   DB.setFeeds(feeds);
+  markDeleted('feeds', id);
   renderFeed();
   toast('已删除');
 };
@@ -2077,6 +2093,7 @@ window.saveDiaperRecord = function(){
 };
 window.delDiaper = function(id){
   DB.setDiapers(DB.getDiapers().filter(function(x){ return x.id!==id; }));
+  markDeleted('diapers', id);
   renderDiapers();
   toast('已删除');
 };
@@ -2132,6 +2149,7 @@ window.addVitRecord = function(type){
 };
 window.delVit = function(id){
   DB.setVits(DB.getVits().filter(function(x){ return x.id!==id; }));
+  markDeleted('vits', id);
   renderVits();
   toast('已删除');
 };
@@ -3162,6 +3180,7 @@ window.confirmSleep = function(){
 };
 window.delSleep = function(id){
   DB.setSleeps(DB.getSleeps().filter(function(s){ return s.id!==id; }));
+  markDeleted('sleeps', id);
   renderSleep();
   toast('已删除');
 };
@@ -3472,6 +3491,7 @@ window.delGrowth = function(idx){
     if(data[i].date===target.date){ data.splice(i,1); break; }
   }
   DB.setGrowth(data);
+  if(target.id) markDeleted('growth', target.id);
   renderGrowthChart();
   renderGrowthList();
 };
@@ -4377,6 +4397,7 @@ window.saveExam = function(){
 };
 window.delExam = function(id){
   DB.setExams(DB.getExams().filter(function(x){ return x.id!==id; }));
+  markDeleted('exams', id);
   renderExams();
   renderExamPlan();
 };
@@ -4423,6 +4444,7 @@ window.saveMed = function(){
 };
 window.delMed = function(id){
   DB.setMeds(DB.getMeds().filter(function(x){ return x.id!==id; }));
+  markDeleted('meds', id);
   renderMeds();
 };
 
@@ -4474,6 +4496,7 @@ window.saveAllergy = function(){
 };
 window.delAllergy = function(id){
   DB.setAllergies(DB.getAllergies().filter(function(x){ return x.id!==id; }));
+  markDeleted('allergies', id);
   renderAllergies();
 };
 
@@ -4519,6 +4542,7 @@ window.saveEvent = function(){
 };
 window.delEvent = function(id){
   DB.setEvents(DB.getEvents().filter(function(x){ return x.id!==id; }));
+  markDeleted('events', id);
   renderEvents();
 };
 
@@ -5803,6 +5827,20 @@ function buildBabyContext(){
     var total=0; feeds.forEach(function(f){ total+=f.value||0; });
     var perDay = Math.round(total/feeds.length);
     lines.push('【喂养·近7天】共'+feeds.length+'次，总量'+total+'ml，日均'+perDay+'ml，平均每次'+Math.round(total/feeds.length)+'ml');
+    // 明细：按日期分组列出每次时间+量（AI 可回答"昨天几点喝了多少"）
+    var byDay = {};
+    feeds.forEach(function(f){
+      var d = dateStr(new Date(f.ts));
+      if(!byDay[d]) byDay[d] = [];
+      byDay[d].push(f);
+    });
+    var days = Object.keys(byDay).sort().reverse();
+    days.forEach(function(d){
+      var list = byDay[d].sort(function(a,b){ return a.ts<b.ts?-1:1; }).map(function(f){
+        return timeStr(new Date(f.ts))+(f.value?(' '+f.value+'ml'):'');
+      }).join('、');
+      lines.push('  '+d+'：'+list);
+    });
   }else{
     lines.push('【喂养】近7天暂无记录');
   }
@@ -6585,9 +6623,26 @@ function packAll(){
         }
         data[id][k] = v;
       });
+      // 打包删除墓碑（实现删除同步）
+      data[id].del = DB._get(id+'_del', {});
     });
   }
   return data;
+}
+/* 按删除墓碑过滤数组记录（删除同步的核心） */
+function applyDeletedFilter(id){
+  try{
+    var del = DB._get(id+'_del', {});
+    SYNC_ARRAY_KEYS.forEach(function(k){
+      var arr = DB._get(id+'_'+k, []);
+      var dids = del[k] || [];
+      if(!dids.length) return;
+      var filtered = arr.filter(function(x){
+        return !(x && x.id && dids.indexOf(x.id) >= 0);
+      });
+      if(filtered.length !== arr.length) DB._set(id+'_'+k, filtered);
+    });
+  }catch(e){}
 }
 var syncApplying = false;  // 拉取应用数据期间不触发自动上传（防止拉取后重传覆盖）
 function unpackAll(data){
@@ -6614,6 +6669,18 @@ function unpackAll(data){
           DB._set(id+'_'+k, v);
         }
       });
+      // 应用删除墓碑（排除被删记录，实现删除同步）
+      if(d.del){
+        var curDel = DB._get(id+'_del', {});
+        for(var dk in d.del){
+          if(!curDel[dk]) curDel[dk] = [];
+          (d.del[dk]||[]).forEach(function(did){
+            if(curDel[dk].indexOf(did) === -1) curDel[dk].push(did);
+          });
+        }
+        DB._set(id+'_del', curDel);
+        applyDeletedFilter(id);
+      }
     });
   }finally{
     syncApplying = false;
@@ -6748,6 +6815,22 @@ function mergeAll(local, remote){
     var m = {};
     SYNC_ARRAY_KEYS.forEach(function(k){ m[k] = mergeArrays(l[k], r[k]); });
     SYNC_OBJECT_KEYS.forEach(function(k){ m[k] = mergeObjects(l[k], r[k]); });
+    // 合并删除墓碑（两边删除标记取并集）
+    var ldel = l.del || {}, rdel = r.del || {};
+    var mdel = {};
+    SYNC_ARRAY_KEYS.forEach(function(k){
+      mdel[k] = mergeArrays(ldel[k] || [], rdel[k] || []);
+    });
+    m.del = mdel;
+    // 应用合并后的墓碑：从并集中剔除被删除的记录
+    SYNC_ARRAY_KEYS.forEach(function(k){
+      var dids = mdel[k] || [];
+      if(dids.length && Array.isArray(m[k])){
+        m[k] = m[k].filter(function(x){
+          return !(x && x.id && dids.indexOf(x.id) >= 0);
+        });
+      }
+    });
     merged[id] = m;
   }
   return merged;
@@ -7021,6 +7104,10 @@ function init(){
   initBaby();
   seedDefaultInsurances();  // 首次打开自动填充默认保单（4份内嵌）
   seedHealthRecords();      // 首次打开自动导入历史健康记录（出生+1月龄体检+异常）
+  // 应用本地删除墓碑（过滤已删除记录，防止删除后残留）
+  if(DB.getMeta && DB.getMeta()){
+    (DB.getMeta().babies||[]).forEach(function(b){ applyDeletedFilter(b.id); });
+  }
   applyTheme();
   renderVersion();
   // 先检测修复乱码（同步前，避免把乱码上传覆盖云端）
