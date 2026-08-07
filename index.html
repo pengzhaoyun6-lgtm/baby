@@ -933,6 +933,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
       <button class="btn-primary" style="background:var(--purple);box-shadow:0 4px 12px rgba(123,95,160,.3);width:100%;margin-bottom:12px" onclick="openInsForm()">＋ 添加保单</button>
       <button class="btn-primary" style="background:linear-gradient(135deg,var(--purple),var(--blue));box-shadow:0 4px 12px rgba(123,95,160,.3);width:100%;margin-bottom:12px" onclick="askInsurance()">💬 问保单：生病/摔伤报哪份？</button>
       <div id="insuranceList"></div>
+      <div id="insuranceGuide"></div>
     </div>
   </section>
 
@@ -1349,7 +1350,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.11';
+var APP_VERSION = '5.3.12';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1439,6 +1440,10 @@ var DB = {
   // 保险 [{id, name, type, amount, due, note}]
   getInsurances: function(){ return this._get(this._key('inss'), []); },
   setInsurances: function(a){ this._set(this._key('inss'), a); },
+
+  // 健康档案记录 [{id, category, date, title, hospital, items, conclusion, note}]
+  getHealthRecs: function(){ return this._get(this._key('hrecs'), []); },
+  setHealthRecs: function(a){ this._set(this._key('hrecs'), a); },
 
   // 里程碑
   getMilestones: function(){ return this._get(this._key('ms'), {}); },
@@ -4613,16 +4618,90 @@ function seedDefaultInsurances(){
     localStorage.setItem('wbb2_ins_seeded', '1');
   }catch(e){}
 }
-/* 健康档案（内嵌：宝宝/妈妈健康背景 + 理赔指引，AI 问诊/问保单时可参考）
- * 数据来源：宝宝保险规划完整档案.md（2026-08-06 整理） */
-var DEFAULT_HEALTH_ARCHIVE = {
-  baby: '彭予安（女），2026-04-24 出生，胎龄39周足月，剖宫产（原因：宫颈水肿+胎动频繁），出生体重3.03kg、身长46cm，Apgar 9-10-10分，非早产无窒息缺氧。G2P1，否认地中海贫血/G6PD家族史。',
-  mom: '妈妈黄雅婷孕期：孕25周（2026-01-16）诊断胎儿宫内生长受限FGR（EFW 591g/2.7th），行羊水穿刺基因检测；32周/36周两次产前超声未见明显异常；出院诊断含"胎儿基因异常"（见基因检测）。',
-  gene: '基因检测（2026-02）：CMA染色体微阵列完全正常（arr(1-22)×2）；WES全外显子检出 KCNJ11 c.673A>G 杂合VUS（意义不明，来源父亲），报告结论"未检测到与胎儿表型相关的基因明确致病突变"。该VUS非致病，可能随研究重新分类。',
+/* 健康档案（内嵌：分类记录 + 检查明细，AI 问诊/问保单时可参考）
+ * category: 孕检|宝宝体检|基因检测|出生信息|其他
+ * items: [{name, value, result: 'ok'|'warn'|'bad'}] */
+var DEFAULT_HEALTH_RECORDS = [
+  { id:'hrec_p1', category:'孕检', date:'2026-01-16', title:'产前诊断门诊（FGR）', hospital:'广东省妇幼保健院',
+    items:[
+      {name:'超声估测胎儿体重EFW', value:'591g', result:'warn'},
+      {name:'EFW百分位', value:'第2.7百分位', result:'warn'}
+    ],
+    conclusion:'临床诊断：胎儿生长发育迟缓（FGR）；遂行羊水穿刺进行基因检测（CMA+WES）',
+    note:'孕25周' },
+  { id:'hrec_p2', category:'孕检', date:'2026-03-11', title:'32周III级彩超', hospital:'广东省妇幼保健院',
+    items:[
+      {name:'BPD双顶径', value:'79mm', result:'ok'},{name:'HC头围', value:'284mm', result:'ok'},
+      {name:'AC腹围', value:'283mm', result:'ok'},{name:'FL股骨长', value:'62mm', result:'ok'},
+      {name:'HL肱骨长', value:'50mm', result:'ok'},{name:'羊水暗区', value:'45mm', result:'ok'},
+      {name:'羊水指数', value:'148mm', result:'ok'},{name:'胎盘', value:'子宫前壁，厚36mm，0-I度', result:'ok'},
+      {name:'脐动脉S/D', value:'2.45', result:'ok'},{name:'胎心率', value:'144次/分', result:'ok'}
+    ],
+    conclusion:'宫内妊娠单活胎；脐动脉血流频谱正常范围；胎儿头颈胸腹脊柱四肢未见明显异常；宫颈内口闭合',
+    note:'孕32周' },
+  { id:'hrec_p3', category:'孕检', date:'2026-01-09', title:'36周产前超声', hospital:'广东省妇幼保健院',
+    items:[
+      {name:'BPD双顶径', value:'89mm', result:'ok'},{name:'HC头围', value:'314mm', result:'ok'},
+      {name:'AC腹围', value:'321mm', result:'ok'},{name:'FL股骨长', value:'66mm', result:'ok'},
+      {name:'羊水暗区', value:'33mm', result:'ok'},{name:'羊水指数', value:'117mm', result:'ok'},
+      {name:'胎盘', value:'子宫前壁，厚36mm，I度', result:'ok'},{name:'脐动脉S/D', value:'2.39', result:'ok'},
+      {name:'胎心率', value:'146次/分', result:'ok'},{name:'估测胎儿体重', value:'2652g±398g', result:'ok'}
+    ],
+    conclusion:'宫内妊娠单活胎；胎儿颈部未见脐带压迹及彩色血流环绕；脐动脉血流频谱正常范围',
+    note:'孕36周' },
+  { id:'hrec_b1', category:'宝宝体检', date:'2026-06-14', title:'1月龄常规体检（儿保）', hospital:'天河区妇幼保健院',
+    items:[
+      {name:'体重', value:'4.95kg（P91.9）', result:'ok'},{name:'身长', value:'56cm（P86.4）', result:'ok'},
+      {name:'头围', value:'37.5cm（P86.4）', result:'ok'},{name:'体重/身高', value:'P61.8', result:'ok'},
+      {name:'皮肤', value:'皮疹', result:'warn'},{name:'前囟', value:'平软，1.5×1.5cm', result:'ok'},
+      {name:'腿纹', value:'不对称', result:'warn'},
+      {name:'髋关节彩超', value:'左α角72°、右α角71°，Graf I型（正常）', result:'ok'},
+      {name:'神经运动20项', value:'大部分通过；头偏左侧、花铃棒留握欠佳', result:'warn'},
+      {name:'儿心量表DQ', value:'100（中等）；精细/语言/社会行为88.2', result:'warn'}
+    ],
+    conclusion:'儿童常规健康检查；营养评价正常；发育商DQ 100中等；髋关节Graf I型正常；头偏左侧/花铃棒留握欠佳需训练随访',
+    note:'1月21天，儿保科' },
+  { id:'hrec_g1', category:'基因检测', date:'2026-02-03', title:'染色体微阵列分析（CMA）', hospital:'广东省妇幼保健院',
+    items:[
+      {name:'样本', value:'羊水（CMA2600963）', result:'ok'},
+      {name:'检测结果', value:'arr(1-22)×2', result:'ok'}
+    ],
+    conclusion:'完全正常：未检出染色体非整倍体、未检出100kb以上明确致病性CNVs、未检出ROH',
+    note:'2026-01-19送检' },
+  { id:'hrec_g2', category:'基因检测', date:'2026-02-04', title:'全外显子组测序（WES）', hospital:'广东省妇幼保健院',
+    items:[
+      {name:'样本', value:'羊水（胎儿）+父母外周血（trio）', result:'ok'},
+      {name:'KCNJ11', value:'c.673A>G（p.Ser225Gly），杂合，来源父亲', result:'warn'},
+      {name:'变异分类', value:'VUS（意义不明）', result:'warn'}
+    ],
+    conclusion:'未检测到与胎儿表型相关的基因明确致病突变；KCNJ11 VUS非确诊，可能随研究重新分类，建议保留报告定期关注',
+    note:'样本编号726027103' },
+  { id:'hrec_n1', category:'出生信息', date:'2026-04-24', title:'出生记录', hospital:'（剖宫产）',
+    items:[
+      {name:'胎龄', value:'39周（足月）', result:'ok'},{name:'分娩方式', value:'子宫下段剖宫产 + 左侧子宫动脉上行支结扎术', result:'ok'},
+      {name:'出生体重', value:'3.03kg', result:'ok'},{name:'出生身长', value:'46cm', result:'ok'},
+      {name:'Apgar评分', value:'9-10-10分', result:'ok'},{name:'羊水', value:'清，约590ml', result:'ok'},
+      {name:'出血量', value:'约300ml', result:'ok'}
+    ],
+    conclusion:'非早产、无窒息缺氧、出生体重正常；剖宫产原因：宫颈水肿+胎动频繁',
+    note:'G2P1' }
+];
+/* 理赔指引 / 投保告知 / 关键时间节点（保险相关，供保险页展示 + AI 上下文） */
+var DEFAULT_INSURANCE_GUIDE = {
   insuranceNote: '投保告知选择"以上情况全无"；出院记录有"胎儿基因异常"表述、有FGR病史，若保险公司调取病历可能存在"未如实告知"争议（保单②免责不含遗传病，但可能以此解除合同；保单②两年不可抗辩期满日2028-06-29）。',
   claimGuide: '【病症速查】意外受伤→保单①平安95511（0免赔100%，每次限额2万）；35种传染病门急诊（流感/手足口等）→保单③人保95518转寿险（社保结算80%，未用社保60%，等待期7天2026-07-06后生效）；肺炎/中耳炎等5种其他疾病门急诊→保单③（等待期90天2026-09-27后生效）；需住院（任何疾病）→保单②人保95518转寿险（≤5000元80%/>5000元100%）；医生开外购药/器械→保单④人保95518转寿险（100%，未用社保90%）；普通感冒/腹泻/湿疹门急诊→无覆盖自费；疫苗不良反应→保单①平安95511（上限5000元，接种后15天内）。【就医要点】优先社保结算；保留发票/清单/病历/检查报告原件；门诊病历写明诊断（保单③需匹配40种清单）；外购药需医生处方；意外24小时内报案。',
   keyDates: '【关键时间节点】2026-06-14 宝宝1月龄体检（天河妇幼，正常）；2026-06-29 人保保单②③④生效；2026-07-01 平安保单①生效；2026-07-06 保单③传染病等待期结束；2026-09-27 保单②③④的90天等待期结束（全面生效）；2028-06-29 保单②两年不可抗辩期满。'
 };
+/* 兼容旧引用：DEFAULT_HEALTH_ARCHIVE 映射到新结构（AI 上下文用） */
+var DEFAULT_HEALTH_ARCHIVE = (function(){
+  var out = { baby:'', mom:'', gene:'', insuranceNote:DEFAULT_INSURANCE_GUIDE.insuranceNote, claimGuide:DEFAULT_INSURANCE_GUIDE.claimGuide, keyDates:DEFAULT_INSURANCE_GUIDE.keyDates };
+  DEFAULT_HEALTH_RECORDS.forEach(function(r){
+    if(r.category==='出生信息') out.baby = r.title + '：' + r.items.map(function(i){return i.name+i.value;}).join('，') + '。' + r.conclusion;
+    else if(r.category==='孕检') out.mom += (out.mom?'；':'') + r.date + ' ' + r.title + '：' + r.items.map(function(i){return i.name+i.value;}).join('，');
+    else if(r.category==='基因检测') out.gene += (out.gene?'；':'') + r.date + ' ' + r.title + '：' + r.items.map(function(i){return i.name+i.value;}).join('，') + '。' + r.conclusion;
+  });
+  return out;
+})();
 /* 首次打开自动导入历史健康记录（出生+1月龄体检+异常事件，去重不覆盖） */
 function seedHealthRecords(){
   try{
@@ -4654,41 +4733,63 @@ function seedHealthRecords(){
     localStorage.setItem('wbb2_health_seeded', '1');
   }catch(e){}
 }
-/* 档案页：展示健康档案详情（宝宝/妈妈/基因/投保/理赔指引/关键时间节点） */
+/* 档案页：按分类展示健康记录（孕检/宝宝体检/基因检测/出生信息），点击展开明细 */
 window.renderArchive = function(){
   var list = document.getElementById('archiveList');
   if(!list) return;
-  if(typeof DEFAULT_HEALTH_ARCHIVE === 'undefined'){
+  var records = DEFAULT_HEALTH_RECORDS || [];
+  if(!records.length){
     list.innerHTML = '<div class="feed-empty">暂无健康档案</div>';
     return;
   }
-  var A = DEFAULT_HEALTH_ARCHIVE;
+  var catOrder = [['孕检','🤰'],['宝宝体检','👶'],['基因检测','🧬'],['出生信息','📅'],['其他','📋']];
   var html = '';
-  // 宝宝
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--blue);margin-bottom:6px">👶 宝宝出生情况</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.baby+'</div></div>';
-  // 妈妈
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--purple);margin-bottom:6px">🤱 妈妈孕期/生产</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.mom+'</div></div>';
-  // 基因
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--green);margin-bottom:6px">🧬 基因检测</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.gene+'</div></div>';
-  // 投保告知
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--gold);margin-bottom:6px">🛡️ 投保告知提示</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.insuranceNote+'</div></div>';
-  // 理赔指引
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--red,#E0709A);margin-bottom:6px">📞 理赔操作指引</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.claimGuide+'</div></div>';
-  // 关键时间节点
-  html += '<div class="archive-item" style="margin-bottom:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
-    '<div style="font-weight:800;font-size:13.5px;color:var(--blue);margin-bottom:6px">📅 关键时间节点</div>'+
-    '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.7">'+A.keyDates+'</div></div>';
+  catOrder.forEach(function(catInfo){
+    var cat = catInfo[0], icon = catInfo[1];
+    var group = records.filter(function(r){ return r.category === cat; });
+    if(!group.length) return;
+    html += '<div style="font-weight:800;font-size:13.5px;color:var(--text);margin:14px 0 8px;display:flex;align-items:center;gap:6px">'+
+      '<span>'+icon+'</span>'+cat+'<span style="font-weight:400;font-size:11px;color:var(--text-faint)">'+group.length+'条</span></div>';
+    group.slice().sort(function(a,b){ return a.date<b.date?1:-1; }).forEach(function(r){
+      var hasWarn = r.items.some(function(i){ return i.result==='warn' || i.result==='bad'; });
+      var badge = hasWarn ? '<span style="background:#FFF4E0;color:#E8960C;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">⚠️ 需关注</span>'
+                          : '<span style="background:#E6F7EE;color:#1FA86A;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">✅ 正常</span>';
+      html += '<div style="margin-bottom:8px;border:1px solid var(--border);border-radius:12px;background:var(--card);overflow:hidden">'+
+        '<div onclick="toggleHrec(\''+r.id+'\')" style="display:flex;align-items:center;gap:8px;padding:12px;cursor:pointer">'+
+          '<div style="flex:1;min-width:0">'+
+            '<div style="font-weight:700;font-size:13.5px;color:var(--text)">'+r.title+'</div>'+
+            '<div style="font-size:11.5px;color:var(--text-faint);margin-top:2px">📅 '+r.date+(r.hospital?' · '+r.hospital:'')+'</div>'+
+          '</div>'+
+          badge+
+          '<span style="color:var(--text-faint);font-size:14px" id="hrecArrow_'+r.id+'">▸</span>'+
+        '</div>'+
+        '<div id="hrecBody_'+r.id+'" style="display:none;padding:0 12px 12px;border-top:1px solid var(--border)">'+
+          '<div style="padding:10px 0 4px;font-weight:700;font-size:12.5px;color:var(--text-sub)">📋 检查项目</div>'+
+          r.items.map(function(it){
+            var c = it.result==='bad' ? '#E23232' : (it.result==='warn' ? '#E8960C' : '#1FA86A');
+            var mark = it.result==='bad' ? '❌' : (it.result==='warn' ? '⚠️' : '✅');
+            return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12.5px;border-bottom:1px dashed var(--border)">'+
+              '<span style="width:110px;flex-shrink:0;color:var(--text-sub)">'+it.name+'</span>'+
+              '<span style="flex:1;color:var(--text)">'+it.value+'</span>'+
+              '<span style="color:'+c+';font-size:11.5px;font-weight:600;flex-shrink:0">'+mark+'</span>'+
+            '</div>';
+          }).join('')+
+          (r.conclusion?'<div style="padding:8px 0 4px;font-weight:700;font-size:12.5px;color:var(--text-sub)">📝 结论</div>'+
+            '<div style="font-size:12.5px;color:var(--text);line-height:1.7">'+r.conclusion+'</div>':'')+
+          (r.note?'<div style="padding:6px 0 0;font-size:11.5px;color:var(--text-faint)">📌 '+r.note+'</div>':'')+
+        '</div>'+
+      '</div>';
+    });
+  });
   list.innerHTML = html;
+};
+window.toggleHrec = function(id){
+  var body = document.getElementById('hrecBody_'+id);
+  var arrow = document.getElementById('hrecArrow_'+id);
+  if(!body) return;
+  var open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if(arrow) arrow.textContent = open ? '▸' : '▾';
 };
 function renderInsurance(){
   var list = document.getElementById('insuranceList');
@@ -4764,6 +4865,24 @@ function renderInsurance(){
     '</div>';
   });
   list.innerHTML = html;
+  // 保险指引（理赔速查/投保告知/关键时间节点）
+  var g = document.getElementById('insuranceGuide');
+  if(g && typeof DEFAULT_INSURANCE_GUIDE !== 'undefined'){
+    g.innerHTML =
+      '<div style="margin-top:14px;font-weight:800;font-size:13.5px;color:var(--text)">📖 理赔与投保指引</div>'+
+      '<div style="margin-top:8px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+        '<div style="font-weight:700;font-size:12.5px;color:var(--red,#E0709A);margin-bottom:6px">📞 病症速查</div>'+
+        '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.8">'+DEFAULT_INSURANCE_GUIDE.claimGuide+'</div>'+
+      '</div>'+
+      '<div style="margin-top:8px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+        '<div style="font-weight:700;font-size:12.5px;color:var(--gold);margin-bottom:6px">🛡️ 投保告知提示</div>'+
+        '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.8">'+DEFAULT_INSURANCE_GUIDE.insuranceNote+'</div>'+
+      '</div>'+
+      '<div style="margin-top:8px;padding:12px;border:1px solid var(--border);border-radius:12px;background:var(--card)">'+
+        '<div style="font-weight:700;font-size:12.5px;color:var(--blue);margin-bottom:6px">📅 关键时间节点</div>'+
+        '<div style="font-size:12.5px;color:var(--text-sub);line-height:1.8">'+DEFAULT_INSURANCE_GUIDE.keyDates+'</div>'+
+      '</div>';
+  }
 }
 window.openInsForm = function(){
   document.getElementById('insName').value = '';
@@ -6061,6 +6180,27 @@ function applyUniversalRecords(rec){
     }
   });
 
+  // 📁 健康档案（孕检/宝宝体检/基因检测/出生信息等检查记录）
+  (rec.healthRecs||[]).forEach(function(h){
+    if(!h || (!h.title && !h.date)) return;
+    var hrecs = DB.getHealthRecs();
+    var date = h.date || todayStr();
+    var dup = hrecs.some(function(x){ return x.date===date && x.title===h.title; });
+    if(dup) return;
+    hrecs.push({
+      id: uid(),
+      category: h.category || '其他',
+      date: date,
+      title: h.title || '健康检查',
+      hospital: h.hospital || '',
+      items: (h.items||[]).map(function(it){ return { name: it.name||'', value: it.value||'', result: it.result||'ok' }; }),
+      conclusion: h.conclusion || '',
+      note: h.note || ''
+    });
+    DB.setHealthRecs(hrecs);
+    done.push('档案:'+(h.title||'健康记录'));
+  });
+
   // 刷新界面
   renderFeed(); renderDiapers(); renderVits(); renderSleep(); renderGrowthChart(); renderGrowthList();
   renderExams(); renderMeds(); renderAllergies(); renderEvents(); renderVaccines(); renderVaccineRec();
@@ -6195,7 +6335,7 @@ function aiSendCore(input, area){
     aiAppend(area, 'bot', '⚠️ 还没有配置 AI Key：请到右上角「设置」里填入 DeepSeek API Key（sk-开头），点测试通过后即可使用。');
     return;
   }
-  // 本地规则快速识别（免费秒回）
+  // 本地规则快速识别（免费秒回：明确的记录动作，如"喂了150ml"）
   var localRec = tryLocalRecord(q);
   if(localRec){
     aiAppend(area, 'user', q);
@@ -6208,55 +6348,58 @@ function aiSendCore(input, area){
   aiAppend(area, 'user', q);
   aiTyping(area, true);
   var ctx = buildBabyContext();
-  // 记录识别 prompt：判断是否记录类，是则返回 JSON（严格判断，宁缺毋滥）
-  var recPrompt = '你是记录识别器。判断用户输入是否在"记录宝宝数据"。\\n' +
-    '【应该记录】用户在报告已发生的具体数据：喂奶Xml、拉了/尿了、睡了X点起X点、体重X身高X头围X、吃了维生素、接种了疫苗、体检数据、发烧/摔跤/呕吐等异常、过敏、用了药、完成了启蒙打卡、达到里程碑。\\n' +
-    '【不要记录】以下情况一律返回 {"intent":"chat"}：\\n' +
-    '1. 提问/咨询（"宝宝吃多少合适？""今天奶量正常吗？"）\\n' +
-    '2. 未来计划（"明天要打疫苗""准备加辅食"）\\n' +
-    '3. 担心/讨论（"总吐奶怎么办？""是不是该补钙"）\\n' +
-    '4. 查询已有记录（"今天喂了几次？"）\\n' +
-    '5. 闲聊/寒暄/任何不含具体记录数据的句子\\n' +
-    '如果是记录，只返回 JSON（不要其他文字）：\\n' +
-    '{"intent":"record","records":{...}}，records 里按需填以下字段：\\n' +
-    '{"feeds":[{"value":150,"note":""}],"sleeps":[{"start":"21:30","end":"06:00","date":"YYYY-MM-DD或留空今天"}],"growth":[{"weight":6.5,"height":61,"headCirc":39.5}],"diapers":[{"type":"pee或poop"}],"vits":[{"type":"AD或D3"}],"exams":[{"date":"","weight":"","height":"","headCirc":"","note":""}],"vaccines":[{"name":"","dose":"","date":""}],"meds":[{"note":""}],"allergies":[{"source":""}],"events":[{"type":"发烧/摔跤/呕吐/腹泻/磕碰/其他","note":""}],"tasks":[{"name":""}],"milestones":[{"name":""}],"inss":[{"name":"","note":""}]}\\n' +
-    '如果不是记录，返回 {"intent":"chat"}\\n' +
-    '用户输入：' + q;
-  var messages = [
-    {role:'system', content:'你是专业的婴幼儿养育 AI 助手，同时具备记录识别能力。用户提供宝宝的真实记录数据，请基于数据回答。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\\n\\n以下是宝宝当前的真实数据：\\n'+ctx},
-    {role:'user', content: recPrompt}
-  ];
-  callDeepSeek(key, messages, function(text){
-    // 尝试解析为记录 JSON
-    try{
-      var m = text.match(/\{[\s\S]*\}/);
-      if(m){
-        var parsed = JSON.parse(m[0]);
-        if(parsed.intent === 'record'){
-          aiTyping(area, false);
-          var result = applyUniversalRecords(parsed.records||{});
-          aiAppend(area, 'bot', result);
-          return;
-        }
-      }
-    }catch(e){}
-    // 不是记录：正常对话（用原始问题再问一次，避免记录识别 prompt 影响回答质量）
-    aiTyping(area, false);
-    var realMessages = [
-      {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\\n\\n以下是宝宝当前的真实数据：\\n'+ctx},
-      {role:'user', content:q}
+  // 显式记录指令：用户明确说"记录/记一下/登记/入档/入库"时才走记录识别；否则纯问答
+  var wantRecord = /(?:记录|记一下|记下|登记|入档|入库|存档)/.test(q);
+  if(wantRecord){
+    var recPrompt = '你是记录识别器。用户明确要求记录，请从输入中提取要记录的内容，只返回 JSON（不要其他文字）：\n' +
+      '{"intent":"record","records":{...}}，records 里按需填以下字段：\n' +
+      '{"feeds":[{"value":150,"note":""}],"sleeps":[{"start":"21:30","end":"06:00","date":"YYYY-MM-DD或留空今天"}],"growth":[{"weight":6.5,"height":61,"headCirc":39.5}],"diapers":[{"type":"pee或poop"}],"vits":[{"type":"AD或D3"}],"exams":[{"date":"","weight":"","height":"","headCirc":"","note":""}],"vaccines":[{"name":"","dose":"","date":""}],"meds":[{"note":""}],"allergies":[{"source":""}],"events":[{"type":"发烧/摔跤/呕吐/腹泻/磕碰/其他","note":""}],"tasks":[{"name":""}],"milestones":[{"name":""}],"inss":[{"name":"","note":""}],"healthRecs":[{"category":"孕检/宝宝体检/基因检测/出生信息/其他","date":"","title":"","hospital":"","items":[{"name":"","value":"","result":"ok/warn/bad"}],"conclusion":"","note":""}]}\n' +
+      '没有可记录的内容则返回 {"intent":"chat"}\n' +
+      '用户输入：' + q;
+    var messages = [
+      {role:'system', content:'你是专业的婴幼儿养育 AI 助手，同时具备记录识别能力。用户提供宝宝的真实记录数据，请基于数据回答。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+      {role:'user', content: recPrompt}
     ];
-    callDeepSeek(key, realMessages, function(text2){
-      aiAppend(area, 'bot', text2);
-    }, function(err2){
-      aiAppend(area, 'bot', '❌ 调用失败：'+err2);
+    callDeepSeek(key, messages, function(text){
+      try{
+        var m = text.match(/\{[\s\S]*\}/);
+        if(m){
+          var parsed = JSON.parse(m[0]);
+          if(parsed.intent === 'record'){
+            aiTyping(area, false);
+            var result = applyUniversalRecords(parsed.records||{});
+            aiAppend(area, 'bot', result);
+            return;
+          }
+        }
+      }catch(e){}
+      aiTyping(area, false);
+      callDeepSeek(key, [
+        {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+        {role:'user', content:q}
+      ], function(text2){
+        aiAppend(area, 'bot', text2);
+      }, function(err2){
+        aiAppend(area, 'bot', '❌ 调用失败：'+err2);
+      });
+    }, function(err){
+      aiTyping(area, false);
+      aiAppend(area, 'bot', '❌ 调用失败：'+err+'。请检查设置里的 Key 是否有效、网络是否正常。');
     });
-  }, function(err){
-    aiTyping(area, false);
-    aiAppend(area, 'bot', '❌ 调用失败：'+err+'。请检查设置里的 Key 是否有效、网络是否正常。');
+    return;
+  }
+  // 默认：纯问答（不做记录识别，避免把问题当记录）
+  aiTyping(area, false);
+  var realMessages = [
+    {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+    {role:'user', content:q}
+  ];
+  callDeepSeek(key, realMessages, function(text2){
+    aiAppend(area, 'bot', text2);
+  }, function(err2){
+    aiAppend(area, 'bot', '❌ 调用失败：'+err2);
   });
 };
-
 /* ===== AI 语音输入（微信式交互：点按→正在听→识别结果填入→自动发送） ===== */
 var aiSR = null;
 var aiVoiceActive = false;  // 是否正在语音识别（决定发送按钮=完成）
@@ -6412,7 +6555,7 @@ function packAll(){
     meta.babies.forEach(function(b){
       var id = b.id;
       data[id] = {};
-      ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'].forEach(function(k){
+      ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss','hrecs'].forEach(function(k){
         var v = DB._get(id+'_'+k, (k==='ms'||k==='vaccines')?{}:[]);
         // 上传前对数组字段去重（防旧重复数据污染云端；无 id 记录按内容签名去重）
         if(Array.isArray(v) && v.length > 1){
@@ -6439,7 +6582,7 @@ function unpackAll(data){
     data.meta.babies.forEach(function(b){
       var id = b.id;
       var d = data[id] || {};
-      ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss'].forEach(function(k){
+      ['baby','feeds','sleeps','growth','checks','ms','diapers','vits','vaccines','cvaccs','exams','meds','allergies','events','inss','hrecs'].forEach(function(k){
         if(d[k] !== undefined){
           var v = d[k];
           // 落地去重（防重复堆积；无 id 记录按内容签名去重）
@@ -6492,7 +6635,7 @@ function ghApi(method, path, body){
 }
 
 /* ============ 合并式同步（永不覆盖对方数据） ============ */
-var SYNC_ARRAY_KEYS = ['feeds','sleeps','growth','checks','diapers','vits','cvaccs','exams','meds','allergies','events','inss'];
+var SYNC_ARRAY_KEYS = ['feeds','sleeps','growth','checks','diapers','vits','cvaccs','exams','meds','allergies','events','inss','hrecs'];
 var SYNC_OBJECT_KEYS = ['baby','ms','vaccines'];
 
 /* 数组合并：按 id 去重（两边都保留，谁的 id 相同取后写的）；无 id 记录按内容签名去重；兼容对象/空值 */
