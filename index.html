@@ -818,13 +818,13 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
     <div class="quick-entry-row">
       <button class="quick-entry qe-ai" onclick="switchTab('ai')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4M8 12H4M16 12h4M12 16v4M8.5 8.5l-3-3M18.5 18.5l-3-3M8.5 15.5l-3 3M18.5 5.5l-3 3M12 12h.01"/></svg></span><span class="qe-lbl">问AI</span></button>
       <button class="quick-entry qe-sleep" onclick="switchTab('sleep')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="qe-lbl">睡眠</span></button>
-      <button class="quick-entry qe-vaccine" onclick="switchTab('vaccine')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v4M14 3v4M7 7h10l-1.5 3H8.5L7 7zM8.5 10l.8 9a1.5 1.5 0 0 0 1.5 1.2h2.4a1.5 1.5 0 0 0 1.5-1.2l.8-9"/></svg></span><span class="qe-lbl">疫苗</span></button>
+      <button class="quick-entry qe-vaccine" onclick="switchTab('vaccine')"><span class="qe-icon"><svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg></span><span class="qe-lbl">疫苗</span></button>
       <button class="quick-entry qe-know" onclick="switchTab('knowledge')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qe-lbl">知识</span></button>
       <button class="quick-entry qe-report" onclick="showWeeklyReport()"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></span><span class="qe-lbl">周报</span></button>
     </div>
     <div class="feed-hero">
       <button class="feed-hero-btn bottle" onclick="openFeedSheet('bottle')">
-        <div class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v4M14 3v4M7 7h10l-1.2 3H8.2L7 7zM8.6 10l.7 9a1.6 1.6 0 0 0 1.6 1.4h2.2a1.6 1.6 0 0 0 1.6-1.4l.7-9"/></svg></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M11 2.5h2V5h-2z"/><path d="M9.5 5h5l-.9 2.5h-3.2L9.5 5z"/><path d="M9.7 7.5h4.6c2.7 0 4.7 2.3 4.7 5v3.5a3.8 3.8 0 0 1-3.8 3.8H8.8a3.8 3.8 0 0 1-3.8-3.8V12.5c0-2.7 2-5 4.7-5z"/><path d="M7 12.5h10M8 15.5h8"/></svg></div>
         <div class="name">瓶喂</div>
         <div class="hint" id="bottleHint">上次 120ml · 点一下记录</div>
       </button>
@@ -1053,7 +1053,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <span>统计</span>
     </button>
     <button class="nav-item" data-tab="vaccine" onclick="switchTab('vaccine')">
-      <svg viewBox="0 0 24 24"><path d="M9 3h6M10 3v4M14 3v4M7 7h10l-1.5 3H8.5L7 7zM8.5 10l.8 9a1.5 1.5 0 0 0 1.5 1.2h2.4a1.5 1.5 0 0 0 1.5-1.2l.8-9"/></svg>
+      <svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg>
       <span>疫苗</span>
     </button>
     <button class="nav-item" data-tab="exam" onclick="switchTab('exam')">
@@ -1398,7 +1398,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.1';
+var APP_VERSION = '5.4.2';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
