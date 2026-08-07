@@ -1350,7 +1350,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.12';
+var APP_VERSION = '5.3.13';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -4748,8 +4748,14 @@ window.renderArchive = function(){
     var cat = catInfo[0], icon = catInfo[1];
     var group = records.filter(function(r){ return r.category === cat; });
     if(!group.length) return;
-    html += '<div style="font-weight:800;font-size:13.5px;color:var(--text);margin:14px 0 8px;display:flex;align-items:center;gap:6px">'+
-      '<span>'+icon+'</span>'+cat+'<span style="font-weight:400;font-size:11px;color:var(--text-faint)">'+group.length+'条</span></div>';
+    // 分类标题（可点击展开/收起，默认收起）
+    html += '<div onclick="toggleHrecGroup(\''+cat+'\')" style="font-weight:800;font-size:13.5px;color:var(--text);margin:10px 0 6px;display:flex;align-items:center;gap:6px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:var(--card);cursor:pointer">'+
+      '<span>'+icon+'</span>'+cat+
+      '<span style="font-weight:400;font-size:11px;color:var(--text-faint)">'+group.length+'条</span>'+
+      '<span style="flex:1"></span>'+
+      '<span id="hrecGroupArrow_'+cat+'" style="color:var(--text-faint);font-size:13px">▸</span>'+
+    '</div>'+
+    '<div id="hrecGroup_'+cat+'" style="display:none;margin-bottom:8px">';
     group.slice().sort(function(a,b){ return a.date<b.date?1:-1; }).forEach(function(r){
       var hasWarn = r.items.some(function(i){ return i.result==='warn' || i.result==='bad'; });
       var badge = hasWarn ? '<span style="background:#FFF4E0;color:#E8960C;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700">⚠️ 需关注</span>'
@@ -4780,6 +4786,7 @@ window.renderArchive = function(){
         '</div>'+
       '</div>';
     });
+    html += '</div>';
   });
   list.innerHTML = html;
 };
@@ -4789,6 +4796,15 @@ window.toggleHrec = function(id){
   if(!body) return;
   var open = body.style.display !== 'none';
   body.style.display = open ? 'none' : '';
+  if(arrow) arrow.textContent = open ? '▸' : '▾';
+};
+/* 点击分类标题：展开/收起整组 */
+window.toggleHrecGroup = function(cat){
+  var group = document.getElementById('hrecGroup_'+cat);
+  var arrow = document.getElementById('hrecGroupArrow_'+cat);
+  if(!group) return;
+  var open = group.style.display !== 'none';
+  group.style.display = open ? 'none' : '';
   if(arrow) arrow.textContent = open ? '▸' : '▾';
 };
 function renderInsurance(){
