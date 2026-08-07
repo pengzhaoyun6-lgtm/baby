@@ -1350,7 +1350,7 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.3.15';
+var APP_VERSION = '5.3.16';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5810,13 +5810,13 @@ function routeModules(q){
   var mods = ['base','today'];  // 宝宝档案+今日汇总总是带上（轻量且上下文必需）
   if(/奶|喂|吃|喝|瓶|母乳|奶粉|ml|毫升/.test(q)) mods.push('feeds');
   if(/睡|醒|夜|觉|起|眠/.test(q)) mods.push('sleeps');
-  if(/体重|身高|头围|生长|曲线|发育|百分位|达标|长得好/.test(q)) mods.push('growth');
+  if(/体重|身高|头围|生长|曲线|发育|百分位|达标|长得好|多重|多高|多长|几斤|几公斤|多少斤|斤|现在多重|多重了|长得|长得怎么样/.test(q)) mods.push('growth');
   if(/疫苗|打针|接种|自费|脊灰|百白破|乙肝|流感|轮状|手足口|水痘|甲肝|麻腮风|乙脑/.test(q)) mods.push('vaccines');
   if(/保险|理赔|报销|保单|赔付|报哪份|报销|保险电话/.test(q)) mods.push('inss');
   if(/档案|体检|儿保|检查|基因|孕检|髋|听力|视力|黄疸|体检报告/.test(q)) mods.push('hrecs');
   if(/药|过敏|咳嗽|湿疹|用药/.test(q)) mods.push('meds','allergies');
-  if(/发烧|摔|吐|腹泻|异常|磕碰|受伤|急诊/.test(q)) mods.push('events');
-  if(/尿|便|拉|屎|大便|小便/.test(q)) mods.push('diapers');
+  if(/发烧|摔|吐|腹泻|拉肚子|异常|磕碰|受伤|急诊|生病|感冒/.test(q)) mods.push('events');
+  if(/尿|便|屎|大便|小便/.test(q)) mods.push('diapers');
   if(/维生|AD|D3|钙|铁|锌/.test(q)) mods.push('vits');
   if(/里程碑|会翻身|会坐|会爬|会走|会叫|大运动|精细/.test(q)) mods.push('ms');
   return mods;
@@ -6514,7 +6514,7 @@ function aiSendCore(input, area){
       '没有可记录的内容则返回 {"intent":"chat"}\n' +
       '用户输入：' + q;
     var messages = [
-      {role:'system', content:'你是专业的婴幼儿养育 AI 助手，同时具备记录识别能力。用户提供宝宝的真实记录数据，请基于数据回答。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+      {role:'system', content:'你是专业的婴幼儿养育 AI 助手，同时具备记录识别能力。用户提供宝宝的真实记录数据，请基于数据回答。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。规则：用户问"现在/目前/当前多重（身高/头围/奶量）"时，如果记录中没有实时数据，就返回最近一次记录并注明日期（如"最近一次测量（7月25日）：6.3kg"），不要说"没有当前数据"；记录中确实没有的内容才说"记录里没有这项"。\n\n以下是宝宝当前的真实数据：\n'+ctx},
       {role:'user', content: recPrompt}
     ];
     callDeepSeek(key, messages, function(text){
@@ -6532,7 +6532,7 @@ function aiSendCore(input, area){
       }catch(e){}
       aiTyping(area, false);
       callDeepSeek(key, [
-        {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+        {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造。规则：用户问"现在/目前/当前多重（身高/头围/奶量）"时，如果记录中没有实时数据，就返回最近一次记录并注明日期（如"最近一次测量（7月25日）：6.3kg"），不要说"没有当前数据"；记录中确实没有的内容才说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
         {role:'user', content:q}
       ], function(text2){
         aiAppend(area, 'bot', text2);
@@ -6548,7 +6548,7 @@ function aiSendCore(input, area){
   // 默认：纯问答（不做记录识别，避免把问题当记录）
   aiTyping(area, false);
   var realMessages = [
-    {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造，可以说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
+    {role:'system', content:'你是专业的婴幼儿养育 AI 助手。用户提供宝宝的真实记录数据，请基于数据回答，数据中没有的信息不要编造。规则：用户问"现在/目前/当前多重（身高/头围/奶量）"时，如果记录中没有实时数据，就返回最近一次记录并注明日期（如"最近一次测量（7月25日）：6.3kg"），不要说"没有当前数据"；记录中确实没有的内容才说"记录里没有这项"。回答用中文，简洁实用，分点给出建议，涉及健康异常时提醒咨询医生。\n\n以下是宝宝当前的真实数据：\n'+ctx},
     {role:'user', content:q}
   ];
   callDeepSeek(key, realMessages, function(text2){
