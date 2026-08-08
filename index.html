@@ -616,6 +616,23 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 .stepper .unit{font-size:12px;color:var(--text-sub);font-weight:600;padding-right:10px}
 .sheet-note{width:100%;border:1.5px solid var(--border);border-radius:12px;padding:11px 12px;background:#FAFCFF;min-height:44px;margin-bottom:12px;outline:none}
 .sheet-note:focus{border-color:var(--blue)}
+/* ===== iOS 滚轮时间选择器 ===== */
+.wheel-picker{display:flex;gap:2px;justify-content:center;align-items:center;padding:6px 0 14px}
+.wheel-col{
+  width:70px;height:140px;overflow-y:scroll;
+  scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;
+  text-align:center;scrollbar-width:none;
+  mask-image:linear-gradient(180deg,transparent,#000 28%,#000 72%,transparent);
+  -webkit-mask-image:linear-gradient(180deg,transparent,#000 28%,#000 72%,transparent);
+}
+.wheel-col::-webkit-scrollbar{display:none}
+.wheel-item{
+  height:35px;line-height:35px;scroll-snap-align:center;
+  font-size:19px;font-weight:600;color:var(--text-sub);
+  transition:color .12s,font-size .12s;
+}
+.wheel-item.sel{color:var(--text);font-size:23px;font-weight:800}
+.wheel-colon{font-size:22px;font-weight:700;color:var(--text);margin:0 2px}
 .btn-big{
   width:100%;border-radius:16px;padding:16px;font-size:17px;font-weight:800;min-height:54px;color:#fff;
   box-shadow:0 4px 14px rgba(91,157,249,.3);
@@ -1094,6 +1111,11 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
     <div class="sheet-row">
       <div class="stepper" id="feedStepper"></div>
     </div>
+    <div class="wheel-picker">
+      <div class="wheel-col" id="feedWheelH"></div>
+      <span class="wheel-colon">:</span>
+      <div class="wheel-col" id="feedWheelM"></div>
+    </div>
     <input class="sheet-note" id="feedNote" placeholder="备注（选填）：如 睡前奶、吐奶了">
     <button class="btn-big green" onclick="saveFeedRecord()">✓ 记录</button>
     <button class="btn-ghost" onclick="closeFeedSheet()">取消</button>
@@ -1163,14 +1185,11 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <div class="sheet">
     <div class="sheet-grab"></div>
     <div class="sheet-title" id="sleepSheetTitle">记录入睡</div>
-    <div class="sheet-row">
-      <div class="stepper">
-        <button onclick="sleepTimeShift(-15)">−</button>
-        <div class="val" id="sleepTimeVal" onclick="document.getElementById('sleepTimeInput').showPicker && document.getElementById('sleepTimeInput').showPicker()">21:00</div>
-        <button onclick="sleepTimeShift(15)">＋</button>
-      </div>
+    <div class="wheel-picker">
+      <div class="wheel-col" id="sleepWheelH"></div>
+      <span class="wheel-colon">:</span>
+      <div class="wheel-col" id="sleepWheelM"></div>
     </div>
-    <input type="time" id="sleepTimeInput" class="sheet-note" style="display:none" onchange="syncSleepTimeFromInput()">
     <button class="btn-ghost" onclick="setSleepNow()">🕐 设为当前时间（<span id="sleepNowLabel">--:--</span>）</button>
     <button class="btn-big purple" onclick="confirmSleep()">✓ 确认记录</button>
     <button class="btn-ghost" onclick="closeSleepSheet()">取消</button>
@@ -1398,7 +1417,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.2';
+var APP_VERSION = '5.4.3';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1964,6 +1983,37 @@ function updateHeader(){
 }
 
 /* =====================================================================
+ * iOS 滚轮选择器引擎（wheelInit：生成滚轮 + 触摸滚动吸附 + 选中高亮）
+ * ===================================================================== */
+var WHEEL_ITEM_H = 35;
+window.wheelInit = function(containerId, min, max, cur, onChange){
+  var el = document.getElementById(containerId);
+  if(!el) return;
+  var html = '';
+  for(var v = min; v <= max; v++) html += '<div class="wheel-item" data-v="'+v+'">'+pad(v)+'</div>';
+  el.innerHTML = html;
+  var items = el.querySelectorAll('.wheel-item');
+  // 初始定位到 cur
+  el.scrollTop = (cur - min) * WHEEL_ITEM_H;
+  function highlight(){
+    var idx = Math.round(el.scrollTop / WHEEL_ITEM_H);
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    for(var i = 0; i < items.length; i++){
+      if(i === idx) items[i].classList.add('sel');
+      else items[i].classList.remove('sel');
+    }
+    if(onChange) onChange(min + idx);
+  }
+  el.addEventListener('scroll', function(){ highlight(); });
+  el.addEventListener('touchend', function(){
+    // 松手吸附到最近项
+    var idx = Math.round(el.scrollTop / WHEEL_ITEM_H);
+    idx = Math.max(0, Math.min(items.length - 1, idx));
+    el.scrollTop = idx * WHEEL_ITEM_H;
+  });
+  setTimeout(highlight, 50);
+};
+/* =====================================================================
  * 喂奶模块
  * ===================================================================== */
 window.openFeedSheet = function(type){
@@ -1976,6 +2026,16 @@ window.openFeedSheet = function(type){
   state.feedValue = last && last.value ? last.value : 120;
   document.getElementById('feedNote').value = '';
   renderFeedStepper();
+  // 时间滚轮：默认当前时间
+  state.feedTime = nowTime();
+  if(window.wheelInit){
+    wheelInit('feedWheelH', 0, 23, parseInt(state.feedTime.split(':')[0], 10), function(v){
+      state.feedTime = pad(v) + ':' + state.feedTime.split(':')[1];
+    });
+    wheelInit('feedWheelM', 0, 59, parseInt(state.feedTime.split(':')[1], 10), function(v){
+      state.feedTime = state.feedTime.split(':')[0] + ':' + pad(v);
+    });
+  }
   openSheet('feedSheet');
 };
 window.setFeedSide = function(side){ state.feedSide = side; };  // 保留兼容（无UI调用）
@@ -1994,9 +2054,15 @@ window.feedStep = function(delta){
 };
 window.saveFeedRecord = function(){
   var b = DB.getBaby();
+  // 用滚轮选择的时间（默认当前），构造 ts
+  var ts = new Date();
+  if(state.feedTime){
+    var hm = state.feedTime.split(':');
+    ts.setHours(parseInt(hm[0],10), parseInt(hm[1],10), 0, 0);
+  }
   var rec = {
     id: uid(),
-    ts: new Date().toISOString(),
+    ts: ts.toISOString(),
     type: 'bottle',
     side: '',
     value: state.feedValue,
@@ -3122,53 +3188,35 @@ function renderFeed(){
  * 睡眠模块
  * ===================================================================== */
 window.markSleepStart = function(){
-  // 点一下直接记录当前时间为入睡（不弹面板，最快路径）
+  // 弹窗 + 滚轮选时间（支持补记/修正入睡时间）
   state.sleepMode = 'start';
   state.sleepTime = nowTime();
-  var b = DB.getBaby();
-  var sleeps = DB.getSleeps();
-  var td = todayStr();
-  // 避免重复：当天已有未结束的入睡记录则提示
-  var dup = sleeps.filter(function(s){ return s.date===td && s.start && !s.end; });
-  if(dup.length){
-    toast('🌙 已记录过入睡 ' + dup[0].start + '（可点列表修改）');
-    renderSleep();
-    return;
+  openSleepSheet('start');
+};
+window.openSleepSheet = function(mode){
+  state.sleepMode = mode || 'start';
+  state.sleepTime = nowTime();
+  var title = document.getElementById('sleepSheetTitle');
+  if(title) title.textContent = mode === 'end' ? '记录起床' : '记录入睡';
+  var nowL = document.getElementById('sleepNowLabel');
+  if(nowL) nowL.textContent = nowTime();
+  // 初始化滚轮
+  var hm = state.sleepTime.split(':');
+  if(window.wheelInit){
+    wheelInit('sleepWheelH', 0, 23, parseInt(hm[0],10), function(v){
+      state.sleepTime = pad(v) + ':' + state.sleepTime.split(':')[1];
+    });
+    wheelInit('sleepWheelM', 0, 59, parseInt(hm[1],10), function(v){
+      state.sleepTime = state.sleepTime.split(':')[0] + ':' + pad(v);
+    });
   }
-  sleeps.push({ id:uid(), date:td, start:state.sleepTime, end:'', recorder:b.recorder||'妈妈' });
-  DB.setSleeps(sleeps);
-  renderSleep();
-  renderHome();
-  toast('🌙 已记录入睡 ' + state.sleepTime + '（点列表可改时间）');
+  openSheet('sleepSheet');
 };
 window.markSleepEnd = function(){
-  // 点一下直接记录当前时间为起床（不弹面板，最快路径）
+  // 弹窗 + 滚轮选时间（支持补记/修正起床时间）
   state.sleepMode = 'end';
   state.sleepTime = nowTime();
-  var b = DB.getBaby();
-  var sleeps = DB.getSleeps();
-  var td = todayStr();
-  // 找到最近一条没有 end 的睡眠记录（当天或前一天）
-  var target = null;
-  for(var i=sleeps.length-1;i>=0;i--){
-    if(!sleeps[i].end){ target = sleeps[i]; break; }
-  }
-  if(!target){
-    // 没有入睡记录，直接补一条起床
-    sleeps.push({ id:uid(), date:td, start:'', end:state.sleepTime, recorder:b.recorder||'妈妈' });
-    DB.setSleeps(sleeps);
-    renderSleep();
-    renderHome();
-    toast('☀️ 已记录起床 ' + state.sleepTime + '（无入睡记录）');
-    return;
-  }
-  target.end = state.sleepTime;
-  DB.setSleeps(sleeps);
-  renderSleep();
-  renderHome();
-  var dur = timeToMin(state.sleepTime) - timeToMin(target.start);
-  if(dur < 0) dur += 1440;
-  toast('☀️ 睡眠时长 ' + durationText(dur) + '（点列表可改时间）');
+  openSleepSheet('end');
 };
 window.sleepTimeShift = function(delta){
   state.sleepTime = minToTime(timeToMin(state.sleepTime) + delta);
@@ -3185,9 +3233,12 @@ window.syncSleepTimeFromInput = function(){
 };
 window.setSleepNow = function(){
   state.sleepTime = nowTime();
-  document.getElementById('sleepTimeVal').textContent = state.sleepTime;
-  var inp = document.getElementById('sleepTimeInput');
-  if(inp) inp.value = state.sleepTime;
+  // 同步滚轮位置
+  var hm = state.sleepTime.split(':');
+  var elH = document.getElementById('sleepWheelH');
+  var elM = document.getElementById('sleepWheelM');
+  if(elH) elH.scrollTop = parseInt(hm[0],10) * WHEEL_ITEM_H;
+  if(elM) elM.scrollTop = parseInt(hm[1],10) * WHEEL_ITEM_H;
 };
 window.confirmSleep = function(){
   var b = DB.getBaby();
@@ -6902,6 +6953,15 @@ function mergeArrays(a, b){
   for(var s in noIdMap) res.push(noIdMap[s]);
   return res;
 }
+/* 字符串数组合并（并集去重）——用于删除墓碑（del 是字符串 id 数组） */
+function mergeIds(a, b){
+  var map = {};
+  (a||[]).forEach(function(x){ if(x) map[x] = 1; });
+  (b||[]).forEach(function(x){ if(x) map[x] = 1; });
+  var res = [];
+  for(var k in map) res.push(k);
+  return res;
+}
 /* 对象合并：字段级，非空优先（本地缺失的用云端补上，反之亦然） */
 function mergeObjects(a, b){
   var res = {};
@@ -6921,6 +6981,21 @@ function mergeObjects(a, b){
 }
 /* 完整合并两份打包数据（local + remote → 并集，自动清理空宝宝） */
 function mergeAll(local, remote){
+  // 全新设备检测：本地没有任何记录数据（首次同步）→ 直接用云端数据，避免本地默认空宝宝干扰
+  var localHasData = false;
+  (local.meta && local.meta.babies || []).forEach(function(b){
+    if(countAllRec(local, b.id) > 0) localHasData = true;
+  });
+  function countAllRec(d, id){
+    var n = 0;
+    var o = d[id]||{};
+    SYNC_ARRAY_KEYS.forEach(function(k){ n += (o[k]||[]).length; });
+    return n;
+  }
+  if(!localHasData && remote && remote.meta && remote.meta.babies && remote.meta.babies.length){
+    // 全新设备：完全采用云端（保留本地 meta 的 theme 等个性设置不覆盖）
+    return remote;
+  }
   var merged = { v:4, syncedAt: new Date().toISOString(), meta: null };
   // 合并 meta（宝宝列表按 id 去重）
   var babies = mergeArrays((local.meta && local.meta.babies) || [], (remote.meta && remote.meta.babies) || []);
@@ -6970,7 +7045,7 @@ function mergeAll(local, remote){
     var ldel = l.del || {}, rdel = r.del || {};
     var mdel = {};
     SYNC_ARRAY_KEYS.forEach(function(k){
-      mdel[k] = mergeArrays(ldel[k] || [], rdel[k] || []);
+      mdel[k] = mergeIds(ldel[k] || [], rdel[k] || []);
     });
     m.del = mdel;
     // 应用合并后的墓碑：从并集中剔除被删除的记录
