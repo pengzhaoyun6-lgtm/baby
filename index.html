@@ -1417,7 +1417,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.3';
+var APP_VERSION = '5.4.4';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -6761,6 +6761,20 @@ function getSyncToken(){
 window.saveSyncToken = function(v){
   syncState.token = v.trim();
   saveSyncState();
+  // 填完 token 自动开启同步并立即拉取（家人填 token 后无需再手动点开启）
+  if(syncState.token){
+    syncState.on = true;
+    saveSyncState();
+    var st = document.getElementById('syncStatus');
+    var cb = document.getElementById('setSyncOn');
+    if(st) st.textContent = '同步中…';
+    if(cb) cb.checked = true;
+    doSync(false).then(function(){ updateSyncUI(); }).catch(function(e){
+      if(st) st.textContent = '同步失败';
+      toast('❌ 同步失败：' + (e && e.message ? e.message : '未知错误'));
+      updateSyncUI();
+    });
+  }
 };
 window.toggleSync = function(on){
   syncState.on = on;
@@ -6887,6 +6901,31 @@ function unpackAll(data){
   }finally{
     syncApplying = false;
   }
+  // 同步拉取后刷新界面（否则数据已写入但界面不更新，家人看起来"没同步"）
+  refreshAllAfterSync();
+}
+/* 同步完成后刷新所有界面（覆盖所有 tab） */
+function refreshAllAfterSync(){
+  try{
+    if(typeof renderBabyList === 'function') renderBabyList();
+    if(typeof renderSideBaby === 'function') renderSideBaby();
+    if(typeof renderHome === 'function') renderHome();
+    if(typeof renderFeed === 'function') renderFeed();
+    if(typeof renderSleep === 'function') renderSleep();
+    if(typeof renderDiapers === 'function') renderDiapers();
+    if(typeof renderVits === 'function') renderVits();
+    if(typeof renderGrowthList === 'function') renderGrowthList();
+    if(typeof renderGrowthChart === 'function') renderGrowthChart();
+    if(typeof renderVaccines === 'function') renderVaccines();
+    if(typeof renderExams === 'function') renderExams();
+    if(typeof renderArchive === 'function') renderArchive();
+    if(typeof renderInsurance === 'function') renderInsurance();
+    if(typeof renderEvents === 'function') renderEvents();
+    if(typeof renderMeds === 'function') renderMeds();
+    if(typeof renderAllergies === 'function') renderAllergies();
+    if(typeof updateHeader === 'function') updateHeader();
+    if(typeof renderAIQuick === 'function') renderAIQuick();
+  }catch(e){ console.warn('刷新界面:', e); }
 }
 
 /* Gitee Contents API 调用：GET 走 query；PUT/POST 走 form-urlencoded body（避免 URL 超长导致 load failed） */
