@@ -1383,6 +1383,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
         <button class="btn-primary" style="flex:1;font-size:13px;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3);min-height:42px" onclick="manualSync()">🔄 立即同步</button>
       </div>
       <div style="font-size:11px;color:var(--text-faint)" id="syncDetail">上次同步：--</div>
+      <div style="font-size:11px;color:var(--text-faint);margin-top:6px;white-space:pre-wrap;word-break:break-all" id="syncDiag"></div>
     </div>
     <div class="set-row">
       <label>数据备份</label>
@@ -1417,7 +1418,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.4';
+var APP_VERSION = '5.4.5';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -6815,6 +6816,12 @@ function updateSyncUI(){
     else if(syncState.pending) t += '（有未上传记录，稍后自动补传）';
     det.textContent = t;
   }
+  // 显示诊断日志（如果有）
+  try{
+    var logs = JSON.parse(localStorage.getItem('wbb2_sync_diag') || '[]');
+    var diagEl = document.getElementById('syncDiag');
+    if(diagEl) diagEl.textContent = logs.join('\n');
+  }catch(e){}
 }
 
 /* 打包/解包全部数据 */
@@ -7104,29 +7111,48 @@ function parseSyncContent(content){
   return JSON.parse(decodeURIComponent(escape(atob(content.replace(/\n/g,'')))));
 }
 
+/* 同步诊断：把最近一次同步的每一步结果显示在设置页（排查"显示同步但没同步"） */
+function syncDiag(msg){
+  try{
+    var logs = JSON.parse(localStorage.getItem('wbb2_sync_diag') || '[]');
+    logs.push(new Date().toLocaleTimeString() + ' ' + msg);
+    if(logs.length > 8) logs = logs.slice(-8);
+    localStorage.setItem('wbb2_sync_diag', JSON.stringify(logs));
+    var el = document.getElementById('syncDiag');
+    if(el) el.textContent = logs.join('\n');
+  }catch(e){}
+}
+window.showSyncDiag = function(){ syncDiag('查看诊断'); };
 /* 核心同步：合并式——本地与云端按记录 id 合并，永不覆盖对方数据
  * 安全铁律：GET 失败 / 解析失败时，宁可不同步，绝不拿本地覆盖云端（防丢数据） */
 function doSync(force){
-  if(!syncState.token) return Promise.reject(new Error('未配置 Token'));
+  if(!syncState.token){ syncDiag('❌ 未配置 Token'); return Promise.reject(new Error('未配置 Token')); }
+  syncDiag('🔄 开始同步（本地宝宝数:' + ((packAll().meta||{}).babies||[]).length + '）');
   var local = packAll();
   return ghApi('GET', SYNC_FILE).then(function(res){
     if(res.ok && res.j.content){
+      syncDiag('✅ GET云端成功，文件大小:' + Math.round((res.j.content.length||0)*0.75/1024) + 'KB');
       try{
         var remote = parseSyncContent(res.j.content);
+        var rb = (remote.meta||{}).babies||[];
+        syncDiag('✅ 解析云端成功，云端宝宝数:' + rb.length);
         // 合并本地 + 云端（两边记录都保留）
         var merged = mergeAll(local, remote);
         syncApplying = true;
         try{ unpackAll(merged); }finally{ syncApplying = false; }
+        syncDiag('✅ 合并应用完成，当前宝宝:' + (DB.getBaby()||{}).name);
         // 无论哪边新，都上传合并结果（云端 = 并集，永不丢数据）
         return uploadSync(res.j.sha);
       }catch(e){
         // 云端解析失败：保留云端原样，不覆盖（宁可不同步也不丢数据）
         console.warn('同步：云端解析失败，跳过本次上传', e);
+        syncDiag('❌ 云端解析失败: ' + e.message);
         throw new Error('云端数据异常，已停止同步以保护数据');
       }
     }else{
       // GET 未返回内容：404=云端还没有文件（首次使用，允许上传）；其他=网络问题（禁止覆盖）
       var msg = res.j && res.j.message ? String(res.j.message) : '';
+      syncDiag('⚠️ GET未返回内容: ' + msg);
       if(msg.indexOf('404') >= 0 || msg.indexOf('Not Found') >= 0 || !res.j){
         return uploadSync(null);  // 首次使用：创建云端文件
       }
@@ -7154,9 +7180,11 @@ function uploadSync(sha){
       syncState.sha = res.j.content.sha;  // 缓存最新 sha，下次直接上传
       syncState.lastSync = new Date().toLocaleString();
       saveSyncState();
+      syncDiag('✅ 上传成功（' + Math.round(JSON.stringify(local).length/1024) + 'KB）');
       return 'up';
     }
     try{ localStorage.setItem('wbb2_sync_err', JSON.stringify(res.j).slice(0,200)); }catch(e){}
+    syncDiag('❌ 上传失败: ' + ((res.j&&(res.j.message||res.j.error))||'未知'));
     if(res.j && res.j.message && String(res.j.message).indexOf('sha') >= 0){
       // sha 冲突（另一设备已更新）→ 清缓存重试一次完整同步（最多1次，防死循环）
       if(window.__syncRetry){ throw new Error('同步冲突，请稍后再试'); }
