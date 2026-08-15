@@ -1116,6 +1116,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <span class="wheel-colon">:</span>
       <div class="wheel-col" id="feedWheelM"></div>
     </div>
+    <button class="btn-ghost" onclick="setFeedNow()">🕐 设为当前时间（<span id="feedNowLabel">--:--</span>）</button>
     <input class="sheet-note" id="feedNote" placeholder="备注（选填）：如 睡前奶、吐奶了">
     <button class="btn-big green" onclick="saveFeedRecord()">✓ 记录</button>
     <button class="btn-ghost" onclick="closeFeedSheet()">取消</button>
@@ -1418,7 +1419,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.5';
+var APP_VERSION = '5.4.6';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1994,7 +1995,8 @@ window.wheelInit = function(containerId, min, max, cur, onChange){
   for(var v = min; v <= max; v++) html += '<div class="wheel-item" data-v="'+v+'">'+pad(v)+'</div>';
   el.innerHTML = html;
   var items = el.querySelectorAll('.wheel-item');
-  // 初始定位到 cur
+  // 初始定位到 cur（用标志位跳过初始化时误触发的 onChange）
+  var inited = false;
   el.scrollTop = (cur - min) * WHEEL_ITEM_H;
   function highlight(){
     var idx = Math.round(el.scrollTop / WHEEL_ITEM_H);
@@ -2003,7 +2005,7 @@ window.wheelInit = function(containerId, min, max, cur, onChange){
       if(i === idx) items[i].classList.add('sel');
       else items[i].classList.remove('sel');
     }
-    if(onChange) onChange(min + idx);
+    if(inited && onChange) onChange(min + idx);
   }
   el.addEventListener('scroll', function(){ highlight(); });
   el.addEventListener('touchend', function(){
@@ -2012,7 +2014,7 @@ window.wheelInit = function(containerId, min, max, cur, onChange){
     idx = Math.max(0, Math.min(items.length - 1, idx));
     el.scrollTop = idx * WHEEL_ITEM_H;
   });
-  setTimeout(highlight, 50);
+  setTimeout(function(){ inited = true; highlight(); }, 50);
 };
 /* =====================================================================
  * 喂奶模块
@@ -2027,8 +2029,11 @@ window.openFeedSheet = function(type){
   state.feedValue = last && last.value ? last.value : 120;
   document.getElementById('feedNote').value = '';
   renderFeedStepper();
-  // 时间滚轮：默认当前时间
+  // 时间滚轮：默认当前时间（先显示弹窗再初始化滚轮，否则 scrollTop 定位无效）
   state.feedTime = nowTime();
+  var nowL = document.getElementById('feedNowLabel');
+  if(nowL) nowL.textContent = nowTime();
+  openSheet('feedSheet');
   if(window.wheelInit){
     wheelInit('feedWheelH', 0, 23, parseInt(state.feedTime.split(':')[0], 10), function(v){
       state.feedTime = pad(v) + ':' + state.feedTime.split(':')[1];
@@ -2037,7 +2042,17 @@ window.openFeedSheet = function(type){
       state.feedTime = state.feedTime.split(':')[0] + ':' + pad(v);
     });
   }
-  openSheet('feedSheet');
+};
+/* 瓶喂：一键设为当前时间（滚轮跳到当前时间） */
+window.setFeedNow = function(){
+  state.feedTime = nowTime();
+  var hm = state.feedTime.split(':');
+  var elH = document.getElementById('feedWheelH');
+  var elM = document.getElementById('feedWheelM');
+  if(elH) elH.scrollTop = parseInt(hm[0],10) * WHEEL_ITEM_H;
+  if(elM) elM.scrollTop = parseInt(hm[1],10) * WHEEL_ITEM_H;
+  var nowL = document.getElementById('feedNowLabel');
+  if(nowL) nowL.textContent = state.feedTime;
 };
 window.setFeedSide = function(side){ state.feedSide = side; };  // 保留兼容（无UI调用）
 function renderFeedStepper(){
@@ -3201,8 +3216,9 @@ window.openSleepSheet = function(mode){
   if(title) title.textContent = mode === 'end' ? '记录起床' : '记录入睡';
   var nowL = document.getElementById('sleepNowLabel');
   if(nowL) nowL.textContent = nowTime();
-  // 初始化滚轮
+  // 初始化滚轮（先显示弹窗再初始化，否则 scrollTop 定位无效）
   var hm = state.sleepTime.split(':');
+  openSheet('sleepSheet');
   if(window.wheelInit){
     wheelInit('sleepWheelH', 0, 23, parseInt(hm[0],10), function(v){
       state.sleepTime = pad(v) + ':' + state.sleepTime.split(':')[1];
@@ -3211,7 +3227,6 @@ window.openSleepSheet = function(mode){
       state.sleepTime = state.sleepTime.split(':')[0] + ':' + pad(v);
     });
   }
-  openSheet('sleepSheet');
 };
 window.markSleepEnd = function(){
   // 弹窗 + 滚轮选时间（支持补记/修正起床时间）
