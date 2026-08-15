@@ -695,7 +695,7 @@ body.dark .group-nav-item{background:rgba(255,255,255,.08)}
 <!-- ===== Header ===== -->
 <header class="app-header">
   <div class="header-left">
-    <div class="baby-avatar" id="babyAvatar">👶</div>
+    <div class="baby-avatar" id="babyAvatar" onclick="changeAvatar()" title="点击更换头像" style="cursor:pointer">👶</div>
     <div class="header-info">
       <div class="header-title"><span id="babyName">宝宝</span><span id="babyAge">0个月</span></div>
       <div class="header-age" id="babyStageLabel">启蒙阶段：0-3个月</div>
@@ -1391,7 +1391,7 @@ body.dark .group-nav-item{background:rgba(255,255,255,.08)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.5.1';
+var APP_VERSION = '5.5.2';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -5898,17 +5898,13 @@ window.editBaby = function(id){
   window._editBabyId = id;
 };
 
-/* 上传宝宝照片（压缩后存 base64） */
-window.handleBabyPhoto = function(input){
-  var id = window._editBabyId;
-  if(!id || !input.files || !input.files[0]) return;
-  var file = input.files[0];
+/* 上传宝宝照片（压缩后存 base64）——支持两种入口：编辑弹窗（_editBabyId）和顶部头像直传 */
+function compressPhoto(file, cb){
   if(file.size > 5*1024*1024){ toast('图片太大，请选 5MB 以内的'); return; }
   var reader = new FileReader();
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
-      // 压缩到 100x100（体积小，同步快）
       var canvas = document.createElement('canvas');
       var size = 100;
       canvas.width = size; canvas.height = size;
@@ -5917,23 +5913,57 @@ window.handleBabyPhoto = function(input){
       var w = img.width*ratio, h = img.height*ratio;
       var x = (size-w)/2, y = (size-h)/2;
       ctx.drawImage(img, x, y, w, h);
-      var dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      // 存到宝宝数据
-      var meta = DB.getMeta();
-      var b = meta.babies.filter(function(x){ return x.id===id; })[0];
-      if(!b) return;
-      b.photo = dataUrl;
-      DB.setMeta(meta);
-      if(id === DB.currentId()) DB.setBaby(b);
-      // 更新预览
-      var thumb = document.getElementById('editBabyThumb');
-      if(thumb) thumb.innerHTML = '<img src="'+dataUrl+'" alt="">';
-      toast('📷 照片已更新');
+      cb(canvas.toDataURL('image/jpeg', 0.85));
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
+window.handleBabyPhoto = function(input){
+  var id = window._editBabyId;
+  if(!id || !input.files || !input.files[0]) return;
+  compressPhoto(input.files[0], function(dataUrl){
+    var meta = DB.getMeta();
+    var b = meta.babies.filter(function(x){ return x.id===id; })[0];
+    if(!b) return;
+    b.photo = dataUrl;
+    DB.setMeta(meta);
+    if(id === DB.currentId()) DB.setBaby(b);
+    var thumb = document.getElementById('editBabyThumb');
+    if(thumb) thumb.innerHTML = '<img src="'+dataUrl+'" alt="">';
+    toast('照片已更新');
+  });
+};
+/* 顶部头像点击 → 直接弹照片选择器（当前宝宝） */
+window.changeAvatar = function(){
+  var id = DB.currentId();
+  if(!id){ toast('请先新建宝宝'); return; }
+  window._editBabyId = id;
+  var inp = document.getElementById('headerPhotoInput');
+  if(!inp){
+    inp = document.createElement('input');
+    inp.type = 'file';
+    inp.id = 'headerPhotoInput';
+    inp.accept = 'image/*';
+    inp.style.display = 'none';
+    inp.onchange = function(){
+      if(!inp.files || !inp.files[0]) return;
+      compressPhoto(inp.files[0], function(dataUrl){
+        var meta = DB.getMeta();
+        var b = meta.babies.filter(function(x){ return x.id===id; })[0];
+        if(!b) return;
+        b.photo = dataUrl;
+        DB.setMeta(meta);
+        if(id === DB.currentId()) DB.setBaby(b);
+        updateHeader();   // 顶部头像立即刷新
+        renderSideBaby();
+        toast('头像已更新');
+      });
+    };
+    document.body.appendChild(inp);
+  }
+  inp.click();
+};
 window.removeBabyPhoto = function(id){
   var meta = DB.getMeta();
   var b = meta.babies.filter(function(x){ return x.id===id; })[0];
