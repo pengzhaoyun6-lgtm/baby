@@ -1419,7 +1419,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.6';
+var APP_VERSION = '5.4.7';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1812,30 +1812,41 @@ var METRIC_KEY = { weight:'weight', height:'height', headCirc:'headCirc' };
 function initBaby(){
   var meta = DB.getMeta();
 
-  // 没有 meta：首次多宝宝升级，把现有单宝宝数据迁移为宝宝1
+  // 没有 meta：不自动创建宝宝（避免每台设备都创建一个 → 同步后云端一堆宝宝）
+  // 显示引导页：填 token 同步（复用云端宝宝）或手动新建宝宝
   if(!meta){
     var legacyBaby = DB._get('baby', null);   // 无前缀键（旧单宝宝数据）
-    var id = uid();
-    var d = new Date(); d.setDate(d.getDate()-92);
-    var b = legacyBaby || { name:'宝宝', birthday: dateStr(d), gender:'boy', recorder:'妈妈', members:['妈妈','奶奶'] };
-    b.id = id;
-    if(!b.members || !b.members.length) b.members=['妈妈','奶奶'];
-    if(!b.recorder) b.recorder = b.members[0];
-    // 迁移旧数据键 → 宝宝1命名空间
-    ['feeds','sleeps','growth','checks','ms','diapers','vits'].forEach(function(k){
-      var old = DB._get(k, null);
-      if(old !== null){ DB._set(id+'_'+k, old); DB._del(k); }
-    });
-    DB._set(id+'_baby', b);
-    DB._del('baby');
-    meta = { babies: [b], current: id };
-    DB.setMeta(meta);
+    if(legacyBaby){
+      // 老版本单宝宝数据：迁移为宝宝1（只有老用户会走到这）
+      var id = uid();
+      var d = new Date(); d.setDate(d.getDate()-92);
+      var b = legacyBaby;
+      b.id = id;
+      if(!b.members || !b.members.length) b.members=['妈妈','奶奶'];
+      if(!b.recorder) b.recorder = b.members[0];
+      // 迁移旧数据键 → 宝宝1命名空间
+      ['feeds','sleeps','growth','checks','ms','diapers','vits'].forEach(function(k){
+        var old = DB._get(k, null);
+        if(old !== null){ DB._set(id+'_'+k, old); DB._del(k); }
+      });
+      DB._set(id+'_baby', b);
+      DB._del('baby');
+      meta = { babies: [b], current: id };
+      DB.setMeta(meta);
+    }else{
+      // 全新用户：不创建，等填 token 同步或手动新建
+      // 建一个"空 meta"占位（标记已初始化，避免下次再走这个分支）
+      DB.setMeta({ babies: [], current: '' });
+      return;
+    }
   }
 
   // 确保当前宝宝数据完整
   var cur = DB.getBaby();
   if(!cur){
     // 兜底：meta 存在但当前宝宝数据缺失
+    // 若无任何宝宝（全新用户还没填 token / 没新建）→ 不创建，等用户操作（避免生成空宝宝）
+    if(!meta.babies || !meta.babies.length) return;
     var first = meta.babies[0];
     var d2 = new Date(); d2.setDate(d2.getDate()-92);
     cur = first || { id: meta.current, name:'宝宝', birthday: dateStr(d2), gender:'boy', recorder:'妈妈', members:['妈妈','奶奶'] };
@@ -5359,6 +5370,22 @@ function latestGrowthRec(arr){
 }
 function renderHome(){
   var baby = DB.getBaby();
+  // 无宝宝（全新用户还没填 token / 没新建）→ 显示引导页
+  if(!baby){
+    var guide = document.getElementById('homeHero');
+    if(guide){
+      guide.innerHTML =
+        '<div style="text-align:center;padding:60px 30px">'+
+        '<div style="font-size:52px;margin-bottom:16px">👶</div>'+
+        '<div style="font-size:18px;font-weight:700;margin-bottom:8px">欢迎使用宝宝启蒙台</div>'+
+        '<div style="font-size:14px;color:var(--text-sub);margin-bottom:28px">还没有宝宝数据<br>请先同步或新建宝宝</div>'+
+        '<button class="btn-primary" style="width:100%;max-width:280px" onclick="openSettings()">⚙️ 去设置填 Token 同步</button>'+
+        '<div style="font-size:13px;color:var(--text-faint);margin-top:14px">或</div>'+
+        '<button class="btn-ghost" style="width:100%;max-width:280px;margin-top:8px" onclick="addNewBaby()">➕ 新建宝宝</button>'+
+        '</div>';
+    }
+    return;
+  }
   var ageMon = baby && baby.birthday ? monthDiff(new Date(baby.birthday), new Date()) : 3;
   var ageLabel = ageMon<1 ? '不满1个月' : ageMon+'个月';
   var growth = DB.getGrowth();
@@ -7042,62 +7069,20 @@ function mergeObjects(a, b){
 }
 /* 完整合并两份打包数据（local + remote → 并集，自动清理空宝宝） */
 function mergeAll(local, remote){
-  // 全新设备检测：本地没有任何记录数据（首次同步）→ 直接用云端数据，避免本地默认空宝宝干扰
-  var localHasData = false;
-  (local.meta && local.meta.babies || []).forEach(function(b){
-    if(countAllRec(local, b.id) > 0) localHasData = true;
-  });
-  function countAllRec(d, id){
-    var n = 0;
-    var o = d[id]||{};
-    SYNC_ARRAY_KEYS.forEach(function(k){ n += (o[k]||[]).length; });
-    return n;
-  }
-  if(!localHasData && remote && remote.meta && remote.meta.babies && remote.meta.babies.length){
-    // 全新设备：完全采用云端（保留本地 meta 的 theme 等个性设置不覆盖）
-    return remote;
-  }
   var merged = { v:4, syncedAt: new Date().toISOString(), meta: null };
-  // 合并 meta（宝宝列表按 id 去重）
-  var babies = mergeArrays((local.meta && local.meta.babies) || [], (remote.meta && remote.meta.babies) || []);
-  // 统计每个宝宝的总记录数（识别"空宝宝"——同一个宝宝的副本一个空一个有数据时，去掉空的）
-  function countRec(id){
-    var n = 0;
-    var l = local[id]||{}, r = remote[id]||{};
-    SYNC_ARRAY_KEYS.forEach(function(k){
-      n += (l[k]||[]).length + (r[k]||[]).length;
-    });
-    return n;
-  }
-  // 若有多个宝宝，且某宝宝 0 记录、另一宝宝有记录且名字相同 → 去掉空的那个（同人副本）
-  var byName = {};
-  babies.forEach(function(b){ (byName[b.name] = byName[b.name]||[]).push(b); });
-  for(var nm in byName){
-    var group = byName[nm];
-    if(group.length > 1){
-      var withData = group.filter(function(b){ return countRec(b.id) > 0; });
-      var empty = group.filter(function(b){ return countRec(b.id) === 0; });
-      if(withData.length >= 1 && empty.length > 0){
-        var keepIds = {};
-        withData.forEach(function(b){ keepIds[b.id] = 1; });
-        babies = babies.filter(function(b){ return keepIds[b.id] || countRec(b.id) > 0; });
-      }
-    }
-  }
-  // current：优先选有记录的宝宝；其次本地；最后云端
-  var curLocal = local.meta ? local.meta.current : '';
-  var curRemote = remote.meta ? remote.meta.current : '';
-  var cur = curLocal || curRemote;
-  var curHasData = babies.some(function(b){ return b.id === cur && countRec(b.id) > 0; });
-  if(!curHasData){
-    var best = babies.slice().sort(function(a,b){ return countRec(b.id) - countRec(a.id); })[0];
-    if(best) cur = best.id;
-  }
-  merged.meta = { babies: babies, current: cur };
-  // 合并每个宝宝的数据
-  var ids = {};
-  babies.forEach(function(b){ ids[b.id] = 1; });
-  for(var id in ids){
+  // 合并 meta（宝宝列表按 id 去重，宝宝对象用字段级合并——名字取最新，不被旧值覆盖）
+  var babyMap = {};
+  (local.meta && local.meta.babies || []).forEach(function(b){ if(b && b.id) babyMap[b.id] = b; });
+  (remote.meta && remote.meta.babies || []).forEach(function(b){
+    if(!b || !b.id) return;
+    babyMap[b.id] = babyMap[b.id] ? mergeObjects(babyMap[b.id], b) : b;
+  });
+  var babies = [];
+  for(var bid in babyMap) babies.push(babyMap[bid]);
+  // 先合并每个宝宝的数据（含墓碑过滤），再统计实际数据量
+  var mergedData = {};  // id → 合并后的数据（墓碑已应用）
+  babies.forEach(function(b){
+    var id = b.id;
     var l = local[id] || {}, r = remote[id] || {};
     var m = {};
     SYNC_ARRAY_KEYS.forEach(function(k){ m[k] = mergeArrays(l[k], r[k]); });
@@ -7118,8 +7103,33 @@ function mergeAll(local, remote){
         });
       }
     });
-    merged[id] = m;
+    mergedData[id] = m;
+  });
+  // 按"墓碑过滤后的实际数据量"统计（0 数据的宝宝一律移除，除非只剩它一个）
+  function countRec(id){
+    var n = 0;
+    var m = mergedData[id] || {};
+    SYNC_ARRAY_KEYS.forEach(function(k){ n += (m[k]||[]).length; });
+    return n;
   }
+  var hasData = babies.filter(function(b){ return countRec(b.id) > 0; });
+  if(hasData.length >= 1){
+    // 有数据的宝宝存在 → 移除所有 0 数据空壳（不看名字，全部清掉）
+    babies = hasData;
+  }
+  // current：强制指向"记录数最多"的宝宝（不信任本地/云端的 current，避免指到空壳）
+  var cur = '';
+  var best = null, bestN = -1;
+  babies.forEach(function(b){
+    var n = countRec(b.id);
+    if(n > bestN){ bestN = n; best = b; }
+  });
+  if(best) cur = best.id;
+  merged.meta = { babies: babies, current: cur };
+  // 只保留最终宝宝的数据（空壳数据丢弃，避免再次同步时复活）
+  var ids = {};
+  babies.forEach(function(b){ ids[b.id] = 1; });
+  for(var id in ids) merged[id] = mergedData[id];
   return merged;
 }
 function parseSyncContent(content){
