@@ -62,7 +62,7 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Segoe UI",Roboto,sans-serif;
   background:var(--bg); color:var(--text); font-size:16px; line-height:1.5;
   min-height:100%; -webkit-font-smoothing:antialiased;
-  padding-left:72px;  /* 侧边栏占位 */
+  padding-bottom:calc(56px + env(safe-area-inset-bottom));  /* 底部 tab 栏占位 */
   overscroll-behavior-y:none;
 }
 button{font-family:inherit;border:none;background:none;cursor:pointer;color:inherit}
@@ -103,11 +103,11 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 .tab-panel{display:none;padding:14px 14px 20px;max-width:640px;margin:0 auto}
 /* AI Tab 微信式聊天布局：fixed 铺满全屏，输入行固定底部（键盘弹出自动贴键盘顶） */
 #panel-ai{display:none;max-width:720px;flex-direction:column;
-  position:fixed;left:72px;right:0;top:0;bottom:0;height:auto;margin:0 auto;padding:12px 14px 8px;z-index:50;
+  position:fixed;left:0;right:0;top:0;bottom:calc(56px + env(safe-area-inset-bottom));height:auto;margin:0 auto;padding:12px 14px 8px;z-index:50;
   background:var(--bg)}
 #panel-ai.active{display:flex;animation:none}
 @media (max-width:480px){
-  #panel-ai{left:64px;right:env(safe-area-inset-right, 0px);padding-right:calc(12px + env(safe-area-inset-right, 0px))}
+  #panel-ai{left:0;right:env(safe-area-inset-right, 0px);padding-right:calc(12px + env(safe-area-inset-right, 0px))}
 }
 #panel-ai .ai-hero{flex-shrink:0}
 #panel-ai .ai-report-grid{flex-shrink:0}
@@ -115,6 +115,10 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 #panel-ai .ai-msg-area{flex:1;min-height:0;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
 #panel-ai .ai-quick{flex-shrink:0;padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:8px;overflow-x:auto}
 #panel-ai .ai-quick button{flex-shrink:0;padding:8px 12px;border-radius:10px;background:var(--blue-light);color:var(--blue);font-size:12.5px;font-weight:700;min-height:38px}
+#panel-ai .ai-quick .ai-quick-btn{display:flex;align-items:center;gap:5px}
+#panel-ai .ai-quick .ai-quick-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+#panel-ai .ai-quick .ai-quick-report{display:flex;align-items:center;gap:5px}
+#panel-ai .ai-quick .ai-quick-report svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 @media (max-width:480px){
   #panel-ai .ai-quick{display:grid;grid-template-columns:1fr 1fr;gap:6px;overflow:visible}
   #panel-ai .ai-quick button{width:100%}
@@ -323,54 +327,53 @@ input,select,textarea{font-family:inherit;font-size:16px;color:var(--text)}
 .ms-range{font-size:11px;color:var(--text-faint)}
 .ms-date{font-size:11px;color:var(--text-sub);flex-shrink:0}
 
-/* ===== Side Nav（iOS 毛玻璃） ===== */
+/* ===== 底部 Tab 导航（iOS 毛玻璃） ===== */
 .side-nav{
-  position:fixed;top:0;left:0;bottom:0;z-index:100;
-  width:72px;
-  background:rgba(255,255,255,.72);
+  position:fixed;left:0;right:0;bottom:0;z-index:100;
+  height:56px;
+  background:rgba(255,255,255,.78);
   -webkit-backdrop-filter:saturate(180%) blur(20px);
   backdrop-filter:saturate(180%) blur(20px);
-  border-right:0.5px solid var(--border);
-  display:flex;flex-direction:column;
+  border-top:0.5px solid var(--border);
+  display:flex;
 }
 .side-logo{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:14px 2px 12px;cursor:pointer;
-  border-bottom:0.5px solid var(--border);
+  display:none;
 }
-.logo-icon{
-  width:44px;height:44px;border-radius:50%;flex-shrink:0;
-  background:linear-gradient(135deg,var(--blue-light),var(--purple-light));
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;overflow:hidden;box-shadow:0 3px 10px rgba(91,157,249,.25);
+.side-items{
+  flex:1;display:flex;flex-direction:row;align-items:stretch;gap:0;padding:0;
 }
-.logo-icon img{width:100%;height:100%;object-fit:cover}
-.logo-info{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0;max-width:100%}
-.logo-text{font-size:10px;font-weight:800;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
-.logo-age{font-size:9px;color:var(--text-faint)}
-.side-items{flex:1;display:flex;flex-direction:column;gap:2px;padding:8px 5px;overflow-y:auto}
-.side-bottom{padding:6px 5px 12px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:2px}
-.side-settings{
-  display:flex;flex-direction:column;align-items:center;gap:2px;width:100%;
-  padding:7px 2px;border-radius:12px;color:var(--text-faint);
-  cursor:pointer;background:none;border:none;font-family:inherit;
-  transition:background .15s,color .15s;
+.side-bottom{
+  display:none;
 }
-.side-settings svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.side-settings:hover{background:var(--bg);color:var(--text)}
-.side-version{text-align:center;font-size:8px;color:var(--text-faint)}
 body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 .side-nav .nav-item{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  padding:8px 1px;border-radius:14px;min-height:50px;
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  padding:6px 1px;border-radius:0;min-height:0;
   color:var(--text-faint);cursor:pointer;background:none;border:none;font-family:inherit;
   transition:background .15s,color .15s,transform .1s;
 }
-.side-nav .nav-item svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
-.side-nav .nav-item span{font-size:9.5px;font-weight:600}
+.side-nav .nav-item svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.side-nav .nav-item span{font-size:10px;font-weight:600;white-space:nowrap}
 .side-nav .nav-item:hover{background:var(--bg);color:var(--text-sub)}
-.side-nav .nav-item.active{color:var(--blue);background:var(--blue-light);box-shadow:inset 0 0 0 1.5px rgba(91,157,249,.2)}
+.side-nav .nav-item.active{color:var(--blue);background:transparent}
+.side-nav .nav-item.active::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:18px;height:3px;border-radius:2px;background:var(--blue)}
+.side-nav .nav-item{position:relative}
 .side-nav .nav-item:active{transform:scale(.93)}
+
+/* ===== 组内二级导航（记录/疫苗/档案 子 tab 条） ===== */
+.group-nav-wrap{max-width:640px;margin:0 auto;padding:8px 14px 0}
+.group-nav{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.group-nav::-webkit-scrollbar{display:none}
+.group-nav-item{
+  flex-shrink:0;padding:7px 13px;border-radius:18px;font-size:13px;font-weight:600;
+  background:rgba(255,255,255,.5);color:var(--text-sub);cursor:pointer;
+  border:0.5px solid var(--border);transition:all .15s;
+  display:flex;align-items:center;gap:5px;
+}
+.group-nav-item svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.group-nav-item.active{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(91,157,249,.3)}
+body.dark .group-nav-item{background:rgba(255,255,255,.08)}
 
 /* ===== Quick Entry（iOS 彩色圆角图标） ===== */
 .quick-entry-row{display:flex;gap:8px;margin-bottom:14px}
@@ -700,11 +703,12 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   </div>
   <div class="header-actions">
     <button class="recorder-chip" id="recorderChip" onclick="cycleRecorder()">👩 妈妈</button>
-    <button class="header-btn" onclick="openSettings()" aria-label="设置">⚙️</button>
+    <button class="header-btn" onclick="openSettings()" aria-label="设置"><svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
   </div>
 </header>
 
 <main>
+  <div id="groupNav" class="group-nav-wrap"></div>
   <!-- ===== Tab 1: 喂奶 ===== -->
   <!-- ===== Tab 2: 睡眠 ===== -->
   <section class="tab-panel" id="panel-sleep">
@@ -793,7 +797,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab 5: 统计 ===== -->
   <section class="tab-panel" id="panel-stats">
     <div class="card">
-      <div class="card-title">📊 今日汇总 <span class="sub" id="statsDateLabel"></span></div>
+      <div class="card-title">今日汇总 <span class="sub" id="statsDateLabel"></span></div>
       <div class="feed-stats" style="margin-bottom:0">
         <div class="feed-stat blue"><div class="num" id="stFeedCount">0</div><div class="lbl">喂奶次数</div></div>
         <div class="feed-stat gold"><div class="num" id="stFeedML">0</div><div class="lbl">总奶量(ml)</div></div>
@@ -809,7 +813,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       </div>
     </div>
     <div class="card">
-      <div class="card-title">🍼 奶量趋势 <span class="sub" id="milkTrendSub"></span></div>
+      <div class="card-title">奶量趋势 <span class="sub" id="milkTrendSub"></span></div>
       <div class="range-tabs">
         <button class="range-tab active" onclick="switchMilkRange(7)">近7天</button>
         <button class="range-tab" onclick="switchMilkRange(30)">近30天</button>
@@ -817,12 +821,12 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <div id="milkChart"></div>
     </div>
     <div class="card">
-      <div class="card-title">🌙 睡眠规律 <span class="sub">近7晚</span></div>
+      <div class="card-title">睡眠规律 <span class="sub">近7晚</span></div>
       <div id="sleepTrendChart"></div>
       <div id="sleepInsight" class="insight-box"></div>
     </div>
     <div class="card">
-      <div class="card-title">🏅 生长发育报告</div>
+      <div class="card-title">生长发育报告</div>
       <div id="growthReportCard"></div>
       <button class="btn-primary" style="background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3)" onclick="showGrowthReport()">📄 生成报告</button>
     </div>
@@ -830,15 +834,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 
   <!-- ===== Tab 0: 首页（含完整喂养） ===== -->
   <section class="tab-panel active" id="panel-home">
-    <!-- 完整喂养区（最高频操作） -->
-    <!-- 快速入口（1下直达常用功能） -->
-    <div class="quick-entry-row">
-      <button class="quick-entry qe-ai" onclick="switchTab('ai')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M12 8V4M8 12H4M16 12h4M12 16v4M8.5 8.5l-3-3M18.5 18.5l-3-3M8.5 15.5l-3 3M18.5 5.5l-3 3M12 12h.01"/></svg></span><span class="qe-lbl">问AI</span></button>
-      <button class="quick-entry qe-sleep" onclick="switchTab('sleep')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></span><span class="qe-lbl">睡眠</span></button>
-      <button class="quick-entry qe-vaccine" onclick="switchTab('vaccine')"><span class="qe-icon"><svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg></span><span class="qe-lbl">疫苗</span></button>
-      <button class="quick-entry qe-know" onclick="switchTab('knowledge')"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span><span class="qe-lbl">知识</span></button>
-      <button class="quick-entry qe-report" onclick="showWeeklyReport()"><span class="qe-icon"><svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg></span><span class="qe-lbl">周报</span></button>
-    </div>
+    <!-- 完整喂养区（最高频操作）：快捷入口已并入底部 tab，首页只保留喂养记录 -->
     <div class="feed-hero">
       <button class="feed-hero-btn bottle" onclick="openFeedSheet('bottle')">
         <div class="icon"><svg viewBox="0 0 24 24"><path d="M11 2.5h2V5h-2z"/><path d="M9.5 5h5l-.9 2.5h-3.2L9.5 5z"/><path d="M9.7 7.5h4.6c2.7 0 4.7 2.3 4.7 5v3.5a3.8 3.8 0 0 1-3.8 3.8H8.8a3.8 3.8 0 0 1-3.8-3.8V12.5c0-2.7 2-5 4.7-5z"/><path d="M7 12.5h10M8 15.5h8"/></svg></div>
@@ -870,7 +866,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 
     <!-- 大小便记录 -->
     <div class="card">
-      <div class="card-title">🚼 大小便 <span class="sub">尿布记录</span></div>
+      <div class="card-title">大小便 <span class="sub">尿布记录</span></div>
       <div class="diaper-btns">
         <button class="diaper-btn pee" onclick="quickDiaper('pee')">
           <span class="icon"><svg viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg></span>
@@ -888,15 +884,15 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 
     <!-- 维生素记录 -->
     <div class="card">
-      <div class="card-title">💊 维生素 <span class="sub">AD / D3</span></div>
+      <div class="card-title">维生素 <span class="sub">AD / D3</span></div>
       <div class="diaper-btns">
         <button class="diaper-btn vit" onclick="addVitRecord('vitAD')">
-          <span class="icon"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="4"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24"><path d="M10.5 3.5a4.5 4.5 0 0 1 6.4 6.4L7 19.7a2.8 2.8 0 0 1-4-4l9.9-9.9a1.8 1.8 0 0 1 2.6 0"/><path d="M6 15l3-3"/><circle cx="14" cy="13" r="1.2"/></svg></span>
           <span class="name">维生素AD</span>
           <span class="hint">点一下记录</span>
         </button>
         <button class="diaper-btn vit" onclick="addVitRecord('vitD3')">
-          <span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9L17 7M7 17l-2.1 2.1"/></svg></span>
+          <span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8"/><circle cx="12" cy="12" r="1.6"/></svg></span>
           <span class="name">维生素D3</span>
           <span class="hint">点一下记录</span>
         </button>
@@ -906,16 +902,16 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 
     <!-- 智能建议 -->
     <div class="card">
-      <div class="card-title">📌 接下来该做什么 <span class="sub">自动根据记录数据提示</span></div>
+      <div class="card-title">接下来该做什么 <span class="sub">自动根据记录数据提示</span></div>
       <div id="homeTasks"></div>
     </div>
     <div class="card home-hero" id="homeHero"></div>
     <div class="card">
-      <div class="card-title">📅 今日概览</div>
+      <div class="card-title">今日概览</div>
       <div id="homeOverview"></div>
     </div>
     <div class="card">
-      <div class="card-title">✨ 最近成长</div>
+      <div class="card-title">最近成长</div>
       <div id="homeRecent"></div>
     </div>
   </section>
@@ -923,12 +919,12 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab 7: 疫苗 ===== -->
   <section class="tab-panel" id="panel-vaccine">
     <div class="card">
-      <div class="card-title">💉 疫苗接种 <span class="sub">点日期填写接种时间</span></div>
+      <div class="card-title">疫苗接种 <span class="sub">点日期填写接种时间</span></div>
       <button class="btn-primary" style="background:var(--purple);box-shadow:0 4px 12px rgba(167,139,219,.3);width:100%;margin-bottom:12px" onclick="openCustomVaccineForm()">＋ 添加自费疫苗</button>
       <div id="vaccineList"></div>
     </div>
     <div class="card">
-      <div class="card-title">💡 自费疫苗推荐 <span class="sub">按月龄提示，自愿接种</span></div>
+      <div class="card-title">自费疫苗推荐 <span class="sub">按月龄提示，自愿接种</span></div>
       <div id="vaccineRecList"></div>
     </div>
   </section>
@@ -936,7 +932,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab 8: 知识 ===== -->
   <section class="tab-panel" id="panel-knowledge">
     <div class="card">
-      <div class="card-title">📖 育儿知识 <span class="sub" id="knowledgeStageLabel"></span></div>
+      <div class="card-title">育儿知识 <span class="sub" id="knowledgeStageLabel"></span></div>
       <div id="knowledgeList"></div>
     </div>
   </section>
@@ -958,16 +954,16 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab: 儿保 ===== -->
   <section class="tab-panel" id="panel-exam">
     <div class="card">
-      <div class="card-title">📋 体检计划 <span class="sub">按月龄自动提醒</span></div>
+      <div class="card-title">体检计划 <span class="sub">按月龄自动提醒</span></div>
       <div id="examPlanList"></div>
     </div>
     <div class="card">
-      <div class="card-title">🏥 体检/儿保 <span class="sub">记录每次儿保检查</span></div>
+      <div class="card-title">体检/儿保 <span class="sub">记录每次儿保检查</span></div>
       <button class="btn-primary" style="background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3);width:100%;margin-bottom:12px" onclick="openExamSheet()">＋ 记录体检</button>
       <div id="examList"></div>
     </div>
     <div class="card">
-      <div class="card-title">💊 用药 / 就医 <span class="sub">生病吃药记录</span></div>
+      <div class="card-title">用药 / 就医 <span class="sub">生病吃药记录</span></div>
       <button class="btn-primary" style="background:var(--gold);box-shadow:0 4px 12px rgba(232,168,74,.3);width:100%;margin-bottom:12px" onclick="openMedSheet()">＋ 记录用药/就医</button>
       <div id="medList"></div>
     </div>
@@ -977,7 +973,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <div id="allergyList"></div>
     </div>
     <div class="card">
-      <div class="card-title">📝 异常事件 <span class="sub">发烧/摔跤/呕吐等</span></div>
+      <div class="card-title">异常事件 <span class="sub">发烧/摔跤/呕吐等</span></div>
       <button class="btn-primary" style="background:var(--danger);box-shadow:0 4px 12px rgba(232,74,74,.3);width:100%;margin-bottom:12px" onclick="openEventSheet()">＋ 记录异常事件</button>
       <div id="eventList"></div>
     </div>
@@ -986,7 +982,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab: 档案（健康档案详情） ===== -->
   <section class="tab-panel" id="panel-archive">
     <div class="card">
-      <div class="card-title">📁 健康档案 <span class="sub">宝宝/妈妈/基因/投保背景</span></div>
+      <div class="card-title">健康档案 <span class="sub">宝宝/妈妈/基因/投保背景</span></div>
       <div id="archiveList"></div>
     </div>
   </section>
@@ -994,9 +990,9 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
   <!-- ===== Tab: 保险 ===== -->
   <section class="tab-panel" id="panel-insurance">
     <div class="card">
-      <div class="card-title">🛡️ 保险 <span class="sub">保单与缴费提醒</span></div>
+      <div class="card-title">保险 <span class="sub">保单与缴费提醒</span></div>
       <button class="btn-primary" style="background:var(--purple);box-shadow:0 4px 12px rgba(167,139,219,.3);width:100%;margin-bottom:12px" onclick="openInsForm()">＋ 添加保单</button>
-      <button class="btn-primary" style="background:linear-gradient(135deg,var(--purple),var(--blue));box-shadow:0 4px 12px rgba(167,139,219,.3);width:100%;margin-bottom:12px" onclick="askInsurance()">💬 问保单：生病/摔伤报哪份？</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,var(--purple),var(--blue));box-shadow:0 4px 12px rgba(167,139,219,.3);width:100%;margin-bottom:12px" onclick="askInsurance()">问保单：生病/摔伤报哪份？</button>
       <div id="insuranceList"></div>
       <div id="insuranceGuide"></div>
     </div>
@@ -1031,7 +1027,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       </div>
       <div class="ai-quick" id="aiQuick2"></div>
       <div class="ai-input-row">
-        <button class="ai-mic" id="aiMic2" onclick="aiVoiceInput2()" title="语音输入">🎤</button>
+        <button class="ai-mic" id="aiMic2" onclick="aiVoiceInput2()" title="语音输入"><svg viewBox="0 0 24 24" width="20" height="20"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></button>
         <input id="aiInput2" placeholder="输入或语音输入你的问题…" onkeydown="if(event.key==='Enter')aiSend2()">
         <button class="ai-send-btn" onclick="aiSend2()">发送</button>
       </div>
@@ -1053,41 +1049,17 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V21a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1v-10.5z"/></svg>
       <span>首页</span>
     </button>
-    <button class="nav-item" data-tab="sleep" onclick="switchTab('sleep')">
-      <svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-      <span>睡眠</span>
-    </button>
-    <button class="nav-item" data-tab="growth" onclick="switchTab('growth')">
-      <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
-      <span>生长</span>
-    </button>
-    <button class="nav-item" data-tab="play" onclick="switchTab('play')">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>
-      <span>启蒙</span>
-    </button>
-    <button class="nav-item" data-tab="stats" onclick="switchTab('stats')">
+    <button class="nav-item" data-tab="record" onclick="switchTab('record')">
       <svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
-      <span>统计</span>
+      <span>记录</span>
     </button>
     <button class="nav-item" data-tab="vaccine" onclick="switchTab('vaccine')">
       <svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg>
       <span>疫苗</span>
     </button>
-    <button class="nav-item" data-tab="exam" onclick="switchTab('exam')">
-      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg>
-      <span>儿保</span>
-    </button>
     <button class="nav-item" data-tab="archive" onclick="switchTab('archive')">
       <svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zM5 8h14l-1 12H6L5 8z"/><path d="M10 12h4"/></svg>
       <span>档案</span>
-    </button>
-    <button class="nav-item" data-tab="insurance" onclick="switchTab('insurance')">
-      <svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>
-      <span>保险</span>
-    </button>
-    <button class="nav-item" data-tab="knowledge" onclick="switchTab('knowledge')">
-      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-      <span>知识</span>
     </button>
     <button class="nav-item" data-tab="ai" onclick="switchTab('ai')">
       <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3c0 .57-.16 1.1-.43 1.56A5 5 0 0 1 17 11h2a3 3 0 0 1 0 6h-2a5 5 0 0 1-2.43 3.44A3 3 0 0 1 12 22a3 3 0 0 1-3-3c0-.57.16-1.1.43-1.56A5 5 0 0 1 7 13H5a3 3 0 0 1 0-6h2a5 5 0 0 1 2.43-3.44A3 3 0 0 1 12 2z"/><circle cx="12" cy="8" r="1.5"/><circle cx="12" cy="16" r="1.5"/><circle cx="16" cy="12" r="1.5"/><circle cx="8" cy="12" r="1.5"/></svg>
@@ -1107,7 +1079,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="feedSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">🍼 记录瓶喂</div>
+    <div class="sheet-title">记录瓶喂</div>
     <div class="sheet-row">
       <div class="stepper" id="feedStepper"></div>
     </div>
@@ -1116,7 +1088,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <span class="wheel-colon">:</span>
       <div class="wheel-col" id="feedWheelM"></div>
     </div>
-    <button class="btn-ghost" onclick="setFeedNow()">🕐 设为当前时间（<span id="feedNowLabel">--:--</span>）</button>
+    <button class="btn-ghost" onclick="setFeedNow()">设为当前时间（<span id="feedNowLabel">--:--</span>）</button>
     <input class="sheet-note" id="feedNote" placeholder="备注（选填）：如 睡前奶、吐奶了">
     <button class="btn-big green" onclick="saveFeedRecord()">✓ 记录</button>
     <button class="btn-ghost" onclick="closeFeedSheet()">取消</button>
@@ -1127,7 +1099,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="diaperSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title" id="diaperSheetTitle">💧 记录小便</div>
+    <div class="sheet-title" id="diaperSheetTitle">记录小便</div>
     <div class="sheet-row">
       <div class="stepper">
         <button onclick="diaperTimeShift(-15)">−</button>
@@ -1154,15 +1126,15 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="voiceSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title" id="voiceSheetTitle">🎤 语音记录</div>
+    <div class="sheet-title" id="voiceSheetTitle">语音记录</div>
     <div id="voiceListenArea">
       <div style="text-align:center;padding:10px 0 6px">
-        <div style="font-size:52px;line-height:1" id="voiceMicIcon">🎤</div>
+        <div style="line-height:1" id="voiceMicIcon"><svg viewBox="0 0 24 24" width="52" height="52" style="stroke:var(--purple);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg></div>
         <div style="font-size:15px;font-weight:700;margin-top:12px" id="voiceStatus">点击开始说话</div>
         <div style="font-size:12px;color:var(--text-sub);margin-top:4px" id="voiceHint">例：「十二点半，吃奶一百五十毫升」</div>
       </div>
       <div style="display:flex;gap:10px;margin-top:14px">
-        <button class="btn-big purple" id="voiceStartBtn" onclick="voiceStart()">🎤 开始说话</button>
+        <button class="btn-big purple" id="voiceStartBtn" onclick="voiceStart()">开始说话</button>
       </div>
     </div>
     <div id="voiceResultArea" style="display:none">
@@ -1175,7 +1147,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
         <div id="voiceParsed" style="font-size:15px;line-height:1.8"></div>
       </div>
       <button class="btn-big green" onclick="voiceConfirm()">✓ 确认记录</button>
-      <button class="btn-ghost" onclick="voiceRetry()">🔁 重新说一次</button>
+      <button class="btn-ghost" onclick="voiceRetry()">重新说一次</button>
       <button class="btn-ghost" onclick="closeVoiceSheet()">取消</button>
     </div>
   </div>
@@ -1191,7 +1163,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
       <span class="wheel-colon">:</span>
       <div class="wheel-col" id="sleepWheelM"></div>
     </div>
-    <button class="btn-ghost" onclick="setSleepNow()">🕐 设为当前时间（<span id="sleepNowLabel">--:--</span>）</button>
+    <button class="btn-ghost" onclick="setSleepNow()">设为当前时间（<span id="sleepNowLabel">--:--</span>）</button>
     <button class="btn-big purple" onclick="confirmSleep()">✓ 确认记录</button>
     <button class="btn-ghost" onclick="closeSleepSheet()">取消</button>
   </div>
@@ -1201,7 +1173,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="examSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">🏥 记录体检</div>
+    <div class="sheet-title">记录体检</div>
     <div class="field"><label>体检日期</label><input type="date" id="examDate"></div>
     <div class="field"><label>月龄</label><input id="examAge" placeholder="如：3个月"></div>
     <div class="field"><label>体重 (kg)</label><input type="number" id="examWeight" placeholder="如：6.5"></div>
@@ -1217,7 +1189,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="medSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">💊 记录用药/就医</div>
+    <div class="sheet-title">记录用药/就医</div>
     <div class="field"><label>日期</label><input type="date" id="medDate"></div>
     <div class="field"><label>类型</label>
       <select id="medType">
@@ -1235,7 +1207,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="allergySheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">⚠️ 记录过敏史</div>
+    <div class="sheet-title">记录过敏史</div>
     <div class="field"><label>日期（首次发现）</label><input type="date" id="allergyDate"></div>
     <div class="field"><label>过敏源</label><input id="allergySource" placeholder="如：牛奶、青霉素、花生"></div>
     <div class="field"><label>过敏类型</label>
@@ -1254,7 +1226,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="eventSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">📝 记录异常事件</div>
+    <div class="sheet-title">记录异常事件</div>
     <div class="field"><label>日期</label><input type="date" id="eventDate"></div>
     <div class="field"><label>类型</label>
       <select id="eventType">
@@ -1273,7 +1245,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="insSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">🛡️ 添加保单</div>
+    <div class="sheet-title">添加保单</div>
     <div class="field">
       <label>📄 保单文档 <span style="color:var(--text-faint);font-weight:400">上传或粘贴后自动识别</span></label>
       <div style="display:flex;gap:8px;margin-bottom:6px">
@@ -1309,7 +1281,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="sheet-mask" id="cvSheet">
   <div class="sheet">
     <div class="sheet-grab"></div>
-    <div class="sheet-title">💉 添加自费疫苗</div>
+    <div class="sheet-title">添加自费疫苗</div>
     <div class="field"><label>疫苗名称</label><input id="cvName" placeholder="如：五联疫苗、13价肺炎"></div>
     <div class="field"><label>剂次</label>
       <select id="cvDose">
@@ -1338,7 +1310,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 <div class="modal-mask" id="settingsModal">
   <div class="modal">
     <button class="modal-close" onclick="closeSettings()">✕</button>
-    <div class="modal-title">⚙️ 设置</div>
+    <div class="modal-title">设置</div>
     <div class="set-row">
       <label>宝宝昵称</label>
       <input type="text" id="setName" placeholder="如：小豆丁">
@@ -1372,16 +1344,16 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
     </div>
     <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px;border:1.5px solid var(--blue);border-radius:14px;padding:12px;margin:10px 0">
       <div style="display:flex;align-items:center;justify-content:space-between">
-        <label style="font-size:15px;font-weight:800;color:var(--blue)">☁️ 多设备同步</label>
+        <label style="font-size:15px;font-weight:800;color:var(--blue)">多设备同步</label>
         <span id="syncStatus" style="font-size:11px;color:var(--text-faint)">未开启</span>
       </div>
       <div style="font-size:11.5px;color:var(--text-sub);line-height:1.5">开启后，记录自动同步到云端（Gitee 私有仓库，国内秒级）。家人手机填同一个 Token 即可共享同一份数据（老婆记录→你打开自动更新）。</div>
       <input id="setSyncToken" type="password" placeholder="Gitee 私人令牌" style="width:100%;border:1px solid var(--border);border-radius:10px;padding:9px 12px;font-size:13px;background:var(--bg)" oninput="saveSyncToken(this.value)">
       <div style="display:flex;gap:8px">
-        <label class="btn-primary" style="flex:1;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--blue);box-shadow:0 4px 12px rgba(91,157,249,.3);min-height:42px">☁️ 开启同步
+        <label class="btn-primary" style="flex:1;font-size:13px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--blue);box-shadow:0 4px 12px rgba(91,157,249,.3);min-height:42px">开启同步
           <input type="checkbox" id="setSyncOn" style="display:none" onchange="toggleSync(this.checked)">
         </label>
-        <button class="btn-primary" style="flex:1;font-size:13px;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3);min-height:42px" onclick="manualSync()">🔄 立即同步</button>
+        <button class="btn-primary" style="flex:1;font-size:13px;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3);min-height:42px" onclick="manualSync()">立即同步</button>
       </div>
       <div style="font-size:11px;color:var(--text-faint)" id="syncDetail">上次同步：--</div>
       <div style="font-size:11px;color:var(--text-faint);margin-top:6px;white-space:pre-wrap;word-break:break-all" id="syncDiag"></div>
@@ -1389,14 +1361,14 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
     <div class="set-row">
       <label>数据备份</label>
       <div style="display:flex;gap:8px">
-        <button class="btn-primary" style="flex:1;font-size:14px" onclick="exportData()">📤 导出</button>
-        <label class="btn-primary" style="flex:1;font-size:14px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3)">📥 导入
+        <button class="btn-primary" style="flex:1;font-size:14px" onclick="exportData()">导出</button>
+        <label class="btn-primary" style="flex:1;font-size:14px;text-align:center;display:flex;align-items:center;justify-content:center;background:var(--green);box-shadow:0 4px 12px rgba(52,179,126,.3)">导入
           <input type="file" id="importFile" accept=".json" style="display:none" onchange="importData(event)">
         </label>
       </div>
     </div>
     <div class="danger-zone">
-      <button class="btn-danger" onclick="confirmClear()">🗑 清空所有数据</button>
+      <button class="btn-danger" onclick="confirmClear()">清空所有数据</button>
     </div>
     <div class="about-note" id="aboutNote">宝宝启蒙台 v5.2.9 · 云同步版<br>记录自动同步到 Gitee 私有云端，多设备共享。<br>开启同步后，家人手机填同一个 Token 即可同步。</div>
   </div>
@@ -1419,7 +1391,7 @@ body.dark .side-nav, body.dark .app-header{background:rgba(28,31,42,.72)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.4.8';
+var APP_VERSION = '5.5.0';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -1906,24 +1878,52 @@ function migrateV1(){
  * ===================================================================== */
 window.switchTab = function(tab){
   state.tab = tab;
+  // 主 tab → 显示的面板组（record 收纳 睡眠/生长/统计/启蒙；vaccine 收纳 疫苗+儿保；archive 收纳 档案+保险+知识）
+  var groups = {
+    home: ['home'],
+    record: ['sleep','growth','stats','play'],
+    vaccine: ['vaccine','exam'],
+    archive: ['archive','insurance','knowledge'],
+    ai: ['ai']
+  };
+  // 旧子 tab 名（sleep/growth/play/stats/exam/insurance/knowledge）→ 映射到所属组的主 tab（首页任务/快捷入口可能仍传旧名）
+  var subToMain = { sleep:'record', growth:'record', stats:'record', play:'record', exam:'vaccine', insurance:'archive', knowledge:'archive' };
+  var mainTab = tab;
+  if(!groups[tab] && subToMain[tab]){
+    mainTab = subToMain[tab];
+    // 记住当前组内选中的子 tab（下次切回来保持）
+    state.groupTab = tab;
+  }
   var panels = {home:'panel-home', sleep:'panel-sleep', growth:'panel-growth', play:'panel-play', stats:'panel-stats', vaccine:'panel-vaccine', knowledge:'panel-knowledge', ai:'panel-ai', exam:'panel-exam', archive:'panel-archive', insurance:'panel-insurance'};
   var navs = document.querySelectorAll('.nav-item');
-  var tabs = ['home','sleep','growth','play','stats','vaccine','exam','archive','insurance','knowledge','ai'];
-  for(var i=0;i<tabs.length;i++){
-    var p = document.getElementById(panels[tabs[i]]);
-    if(p) p.classList.toggle('active', tabs[i]===tab);
-    navs[i].classList.toggle('active', tabs[i]===tab);
+  // 切换主 tab 高亮
+  for(var i=0;i<navs.length;i++){
+    navs[i].classList.toggle('active', navs[i].getAttribute('data-tab')===mainTab);
+  }
+  // 显示当前组的第一个面板（隐藏所有）；子 tab 直接传入时显示该子面板
+  var show = groups[mainTab] || [mainTab];
+  var showFirst = (mainTab !== tab && state.groupTab) ? state.groupTab : show[0];
+  for(var k in panels){
+    var p = document.getElementById(panels[k]);
+    if(p) p.classList.toggle('active', show.indexOf(k)>=0 && k===showFirst);
+  }
+  // 记录/档案/疫苗组：显示组内二级导航
+  if(show.length > 1){
+    renderGroupNav(mainTab, show, showFirst);
+  } else {
+    var gn = document.getElementById('groupNav');
+    if(gn) gn.innerHTML = '';
   }
   if(tab==='home') renderHome();
-  if(tab==='sleep') renderSleep();
-  if(tab==='growth'){ renderGrowthChart(); renderGrowthList(); }
-  if(tab==='play'){ renderTasks(); renderMilestones(); }
-  if(tab==='stats'){ renderStats(); }
-  if(tab==='exam'){ renderExamPlan(); renderExams(); renderMeds(); renderAllergies(); renderEvents(); }
-  if(tab==='archive'){ renderArchive(); }
-  if(tab==='insurance'){ renderInsurance(); }
-  if(tab==='vaccine'){ renderVaccines(); renderVaccineRec(); }
-  if(tab==='knowledge') renderKnowledge();
+  if(show.indexOf('sleep')>=0) renderSleep();
+  if(show.indexOf('growth')>=0){ renderGrowthChart(); renderGrowthList(); }
+  if(show.indexOf('play')>=0){ renderTasks(); renderMilestones(); }
+  if(show.indexOf('stats')>=0){ renderStats(); }
+  if(show.indexOf('exam')>=0){ renderExamPlan(); renderExams(); renderMeds(); renderAllergies(); renderEvents(); }
+  if(show.indexOf('archive')>=0){ renderArchive(); }
+  if(show.indexOf('insurance')>=0){ renderInsurance(); }
+  if(show.indexOf('vaccine')>=0){ renderVaccines(); renderVaccineRec(); }
+  if(show.indexOf('knowledge')>=0) renderKnowledge();
   if(tab==='ai'){
     renderAIQuick();
     fitAIViewport();  // 用 visualViewport 精确适配，键盘弹出/地址栏变化都正确
@@ -1932,6 +1932,52 @@ window.switchTab = function(tab){
       if(inp && inp.scrollIntoView) inp.scrollIntoView({block:'nearest'});
     }, 60);
   }
+  window.scrollTo(0,0);
+};
+/* 组内二级导航（记录/疫苗/档案 的子 tab 条） */
+function renderGroupNav(group, show, curTab){
+  var gn = document.getElementById('groupNav');
+  if(!gn) return;
+  var icons = {
+    sleep:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+    growth:'<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>',
+    stats:'<svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>',
+    play:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 16 0v1"/></svg>',
+    exam:'<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 14h2M14 14h2M8 18h2M14 18h2"/></svg>',
+    insurance:'<svg viewBox="0 0 24 24"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M9 12l2 2 4-4"/></svg>',
+    knowledge:'<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    vaccine:'<svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg>',
+    archive:'<svg viewBox="0 0 24 24"><path d="M4 4h16v4H4zM5 8h14l-1 12H6L5 8z"/><path d="M10 12h4"/></svg>'
+  };
+  var labels = { sleep:'睡眠', growth:'生长', stats:'统计', play:'启蒙', exam:'儿保', insurance:'保险', knowledge:'知识', vaccine:'疫苗', archive:'档案' };
+  var cur = curTab || show[0];  // 高亮当前选中的子 tab（默认组内第一个）
+  var html = '<div class="group-nav">';
+  show.forEach(function(t){
+    html += '<button class="group-nav-item'+(t===cur?' active':'')+'" onclick="switchGroup(\''+t+'\')">'+(icons[t]||'')+'<span>'+(labels[t]||t)+'</span></button>';
+  });
+  html += '</div>';
+  gn.innerHTML = html;
+}
+window.switchGroup = function(t){
+  // 在组内切换显示的面板（vaccine/archive 本身也是组首，点自己就留在本组）
+  var groups = {sleep:'record', growth:'record', stats:'record', play:'record', exam:'vaccine', vaccine:'vaccine', insurance:'archive', knowledge:'archive', archive:'archive'};
+  var group = groups[t] || 'record';
+  var gdef = {record:['sleep','growth','stats','play'], vaccine:['vaccine','exam'], archive:['archive','insurance','knowledge']};
+  var show = gdef[group];
+  var panels = {sleep:'panel-sleep', growth:'panel-growth', play:'panel-play', stats:'panel-stats', vaccine:'panel-vaccine', knowledge:'panel-knowledge', exam:'panel-exam', archive:'panel-archive', insurance:'panel-insurance'};
+  for(var k in panels){
+    var p = document.getElementById(panels[k]);
+    if(p) p.classList.toggle('active', k===t);
+  }
+  renderGroupNav(group, show, t);  // 高亮当前点击的子 tab
+  if(t==='sleep') renderSleep();
+  if(t==='growth'){ renderGrowthChart(); renderGrowthList(); }
+  if(t==='stats') renderStats();
+  if(t==='play'){ renderTasks(); renderMilestones(); }
+  if(t==='exam'){ renderExamPlan(); renderExams(); renderMeds(); renderAllergies(); renderEvents(); }
+  if(t==='archive') renderArchive();
+  if(t==='insurance') renderInsurance();
+  if(t==='knowledge') renderKnowledge();
   window.scrollTo(0,0);
 };
 
@@ -1949,7 +1995,7 @@ window.cycleRecorder = function(){
 };
 
 function renderMembers(){
-  var b = DB.getBaby();
+  var b = DB.getBaby() || {};  // 无宝宝（全新用户）不崩
   var list = document.getElementById('memberList');
   var html = '';
   (b.members||[]).forEach(function(m){
@@ -1959,7 +2005,7 @@ function renderMembers(){
       '</span>';
   });
   list.innerHTML = html;
-  document.getElementById('setCurrentRec').textContent = b.recorder;
+  document.getElementById('setCurrentRec').textContent = b.recorder || '妈妈';
 }
 window.setRecorder = function(name){
   var b = DB.getBaby(); b.recorder = name; DB.setBaby(b); renderMembers(); updateHeader(); toast('当前记录人：'+name);
@@ -1984,15 +2030,21 @@ window.removeMember = function(name){
  * Header
  * ===================================================================== */
 function updateHeader(){
-  var b = DB.getBaby();
+  var b = DB.getBaby() || {};  // 无宝宝（全新用户）不崩
   document.getElementById('babyName').textContent = b.name || '宝宝';
   var m = babyMonths();
   document.getElementById('babyAge').textContent = (m<1 ? '不满1个月' : m+'个月');
   var stage = getStage(TASK_STAGES);
   document.getElementById('babyStageLabel').textContent = '启蒙阶段：'+stage.label;
   var rec = document.getElementById('recorderChip');
-  rec.innerHTML = (b.recorder==='妈妈'?'👩':b.recorder==='奶奶'?'👵':b.recorder==='爸爸'?'👨':'👤')+' '+esc(b.recorder);
-  document.getElementById('babyAvatar').textContent = b.gender==='girl' ? '👧' : '👶';
+  var recIcons = { '妈妈':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>', '奶奶':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M12 12l-2 3 2 2 2-2-2-3z"/></svg>', '爸爸':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M8 8l4 4 4-4"/></svg>' };
+  rec.innerHTML = (recIcons[b.recorder]||recIcons['妈妈'])+' '+esc(b.recorder||'妈妈');
+  var av = document.getElementById('babyAvatar');
+  if(b.gender==='girl'){
+    av.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="5"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/><path d="M7 6l-3-1M17 6l3-1"/></svg>';
+  }else{
+    av.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="5"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/><path d="M5 8l-1 3M19 8l1 3"/></svg>';
+  }
 }
 
 /* =====================================================================
@@ -2741,7 +2793,7 @@ window.openVoiceSheet = function(mode){
   document.getElementById('voiceSheet').classList.add('show');
   var isSleep = voiceState.mode === 'sleep';
   var isGrowth = voiceState.mode === 'growth';
-  document.getElementById('voiceSheetTitle').textContent = isSleep ? '🎤 语音记录睡眠' : (isGrowth ? '🎤 语音记录生长' : '🎤 语音记录');
+  document.getElementById('voiceSheetTitle').textContent = isSleep ? '语音记录睡眠' : (isGrowth ? '语音记录生长' : '语音记录');
   resetVoiceUI();
   // 不支持语音识别 → 直接显示降级提示
   if(!voiceAvailable()){
@@ -2751,9 +2803,9 @@ window.openVoiceSheet = function(mode){
     var la = document.getElementById('voiceListenArea');
     // 加一个快捷引导：直接跳去对应面板手动记录
     la.innerHTML += isSleep
-      ? '<button class="btn-ghost" onclick="closeVoiceSheet()">🌙 手动记录睡眠（入睡/起床按钮）</button>'
+      ? '<button class="btn-ghost" onclick="closeVoiceSheet()">手动记录睡眠（入睡/起床按钮）</button>'
       : (isGrowth
-        ? '<button class="btn-ghost" onclick="closeVoiceSheet()">📏 手动填写生长记录</button>'
+        ? '<button class="btn-ghost" onclick="closeVoiceSheet()">手动填写生长记录</button>'
         : '<button class="btn-ghost" onclick="closeVoiceSheet();openFeedSheet(\'bottle\')">🍼 改用瓶喂手动记录</button>');
   }
 };
@@ -2770,7 +2822,7 @@ function resetVoiceUI(){
       ? '例：「体重6.5公斤，身高61，头围39.5」'
       : '例：「十二点半，吃奶一百五十毫升」');
   document.getElementById('voiceStartBtn').style.display = '';
-  document.getElementById('voiceMicIcon').textContent = '🎤';
+  document.getElementById('voiceMicIcon').innerHTML = '<svg viewBox="0 0 24 24" width="52" height="52" style="stroke:var(--purple);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>';
 }
 
 window.voiceStart = function(){
@@ -2805,7 +2857,7 @@ window.voiceStart = function(){
     voiceState.listening = false;
     document.getElementById('voiceStatus').textContent = '识别失败：' + (e.error||'未知错误');
     document.getElementById('voiceStartBtn').textContent = '🎤 重新开始';
-    document.getElementById('voiceMicIcon').textContent = '🎤';
+    document.getElementById('voiceMicIcon').innerHTML = '<svg viewBox="0 0 24 24" width="52" height="52" style="stroke:var(--purple);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>';
     if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
       document.getElementById('voiceHint').textContent = '请允许麦克风权限后重试；iPhone请用键盘🎤听写';
     }
@@ -2814,7 +2866,7 @@ window.voiceStart = function(){
     if(!voiceState.listening) return;
     voiceState.listening = false;
     document.getElementById('voiceStartBtn').textContent = '🎤 重新开始';
-    document.getElementById('voiceMicIcon').textContent = '🎤';
+    document.getElementById('voiceMicIcon').innerHTML = '<svg viewBox="0 0 24 24" width="52" height="52" style="stroke:var(--purple);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/></svg>';
     if(voiceState.rawText){
       showVoiceResult(voiceState.rawText);
     }else{
@@ -3753,7 +3805,7 @@ window.cycleMilestone = function(id){
  * 设置
  * ===================================================================== */
 window.openSettings = function(){
-  var b = DB.getBaby();
+  var b = DB.getBaby() || {};  // 无宝宝（全新用户）不崩，显示空值
   document.getElementById('setName').value = b.name || '';
   document.getElementById('setBirthday').value = b.birthday || '';
   document.getElementById('setGender').value = b.gender || 'boy';
@@ -3765,14 +3817,16 @@ window.openSettings = function(){
   document.getElementById('settingsModal').classList.add('show');
 };
 window.closeSettings = function(){
-  var b = DB.getBaby();
+  var b = DB.getBaby() || {};  // 无宝宝（全新用户）关闭不崩
   var name = document.getElementById('setName').value.trim();
   var birthday = document.getElementById('setBirthday').value;
   var gender = document.getElementById('setGender').value;
-  if(name) b.name = name;
-  if(birthday) b.birthday = birthday;
-  b.gender = gender;
-  DB.setBaby(b);
+  if(b.id){
+    if(name) b.name = name;
+    if(birthday) b.birthday = birthday;
+    b.gender = gender;
+    DB.setBaby(b);
+  }
   document.getElementById('settingsModal').classList.remove('show');
   updateHeader();
   renderGrowthChart();
@@ -4892,7 +4946,13 @@ window.renderArchive = function(){
     list.innerHTML = '<div class="feed-empty">暂无健康档案</div>';
     return;
   }
-  var catOrder = [['孕检','🤰'],['宝宝体检','👶'],['基因检测','🧬'],['出生信息','📅'],['其他','📋']];
+  var catOrder = [
+    ['孕检','<svg viewBox="0 0 24 24"><path d="M9 12h6M12 9v6"/><circle cx="12" cy="12" r="9"/></svg>'],
+    ['宝宝体检','<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>'],
+    ['基因检测','<svg viewBox="0 0 24 24"><path d="M8 3v18M16 3v18M3 8h18M3 16h18"/><circle cx="8" cy="3" r="1.5"/><circle cx="16" cy="3" r="1.5"/><circle cx="8" cy="21" r="1.5"/><circle cx="16" cy="21" r="1.5"/></svg>'],
+    ['出生信息','<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/><circle cx="12" cy="15" r="2.5"/></svg>'],
+    ['其他','<svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>']
+  ];
   var html = '';
   catOrder.forEach(function(catInfo){
     var cat = catInfo[0], icon = catInfo[1];
@@ -5910,34 +5970,52 @@ function renderAIQuick(){
   var baby = DB.getBaby();
   var ageMon = baby && baby.birthday ? monthDiff(new Date(baby.birthday), new Date()) : 3;
   var qs = [];
+  // 图标库（线性 SVG）
+  function ic(name){
+    var map = {
+      sleep:'<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+      milk:'<svg viewBox="0 0 24 24"><path d="M11 2.5h2V5h-2z"/><path d="M9.5 5h5l-.9 2.5h-3.2L9.5 5z"/><path d="M9.7 7.5h4.6c2.7 0 4.7 2.3 4.7 5v3.5a3.8 3.8 0 0 1-3.8 3.8H8.8a3.8 3.8 0 0 1-3.8-3.8V12.5c0-2.7 2-5 4.7-5z"/><path d="M7 12.5h10M8 15.5h8"/></svg>',
+      target:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>',
+      vaccine:'<svg viewBox="0 0 24 24"><rect x="9" y="10" width="9" height="4" rx="1.5"/><path d="M9 12H4"/><rect x="2" y="10" width="3" height="4" rx="1"/><path d="M18 12l3-3M21 9l1-1"/><path d="M11 12h5"/></svg>',
+      food:'<svg viewBox="0 0 24 24"><path d="M6 3v18M4 3v6a2 2 0 0 0 4 0V3M18 3c-2 3-3 5-3 8a3 3 0 0 0 6 0c0-3-1-5-3-8z"/></svg>',
+      walk:'<svg viewBox="0 0 24 24"><path d="M13 5a2 2 0 1 0-4 0 2 2 0 0 0 4 0zM11 9v5l-3 6M11 14l3 6"/></svg>',
+      talk:'<svg viewBox="0 0 24 24"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.4-4.1-1L3 20l1-5.4A8.5 8.5 0 1 1 21 11.5z"/></svg>',
+      rice:'<svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 16 0M3 12h18M5 12c0 1.5.3 2.8.8 4M19 12c0 1.5-.3 2.8-.8 4M6 16h12l-1.5 4h-9L6 16z"/></svg>',
+      toilet:'<svg viewBox="0 0 24 24"><path d="M7 3h10v4a5 5 0 0 1-10 0V3z"/><path d="M6 11a6 6 0 0 0 12 0"/><path d="M10 17v4M14 17v4"/></svg>',
+      school:'<svg viewBox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5L2 9z"/><path d="M6 11.5V17a3 3 0 0 0 6 0v-5.5M22 9v6"/></svg>',
+      report:'<svg viewBox="0 0 24 24"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>',
+      calendar:'<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>'
+    };
+    return map[name] || '';
+  }
   if(ageMon < 6){
-    qs.push(['🌙 睡眠分析', '宝宝最近睡眠怎么样？有什么需要注意的吗']);
-    qs.push(['🍼 奶量评估', '最近奶量正常吗？']);
-    qs.push(['🎯 本月重点', '这个月龄该重点练什么？']);
-    qs.push(['💉 疫苗提醒', '接下来该打什么疫苗？']);
+    qs.push(['sleep','睡眠分析', '宝宝最近睡眠怎么样？有什么需要注意的吗']);
+    qs.push(['milk','奶量评估', '最近奶量正常吗？']);
+    qs.push(['target','本月重点', '这个月龄该重点练什么？']);
+    qs.push(['vaccine','疫苗提醒', '接下来该打什么疫苗？']);
   }else if(ageMon < 12){
-    qs.push(['🥣 辅食建议', '这个月龄辅食该怎么加？']);
-    qs.push(['🍼 奶量评估', '最近奶量和辅食怎么搭配？']);
-    qs.push(['🎯 本月重点', '这个月龄该重点练什么？']);
-    qs.push(['💉 疫苗提醒', '接下来该打什么疫苗？']);
+    qs.push(['food','辅食建议', '这个月龄辅食该怎么加？']);
+    qs.push(['milk','奶量评估', '最近奶量和辅食怎么搭配？']);
+    qs.push(['target','本月重点', '这个月龄该重点练什么？']);
+    qs.push(['vaccine','疫苗提醒', '接下来该打什么疫苗？']);
   }else if(ageMon < 24){
-    qs.push(['🚶 走路发育', '宝宝走路/运动发育正常吗？']);
-    qs.push(['🗣️ 语言评估', '这个月龄该会说哪些词？']);
-    qs.push(['🍚 吃饭问题', '宝宝不好好吃饭怎么办？']);
-    qs.push(['💉 疫苗提醒', '接下来该打什么疫苗？']);
+    qs.push(['walk','走路发育', '宝宝走路/运动发育正常吗？']);
+    qs.push(['talk','语言评估', '这个月龄该会说哪些词？']);
+    qs.push(['rice','吃饭问题', '宝宝不好好吃饭怎么办？']);
+    qs.push(['vaccine','疫苗提醒', '接下来该打什么疫苗？']);
   }else{
-    qs.push(['🚽 如厕训练', '如厕训练怎么开始？']);
-    qs.push(['🗣️ 语言评估', '这个月龄语言该发展到哪？']);
-    qs.push(['🎓 入园准备', '入园前要准备什么？']);
-    qs.push(['💉 疫苗提醒', '接下来该打什么疫苗？']);
+    qs.push(['toilet','如厕训练', '如厕训练怎么开始？']);
+    qs.push(['talk','语言评估', '这个月龄语言该发展到哪？']);
+    qs.push(['school','入园准备', '入园前要准备什么？']);
+    qs.push(['vaccine','疫苗提醒', '接下来该打什么疫苗？']);
   }
   var html = '';
   qs.forEach(function(q){
-    html += '<button onclick="aiAsk2(\''+q[1].replace(/'/g,"\\'")+'\')">'+q[0]+'</button>';
+    html += '<button class="ai-quick-btn" onclick="aiAsk2(\''+q[2].replace(/'/g,"\\'")+'\')">'+ic(q[0])+'<span>'+q[1]+'</span></button>';
   });
   // 周报/月报（与快捷问题同一排，样式区分）
-  html += '<button class="ai-quick-report" onclick="showWeeklyReport()">📊 成长周报</button>';
-  html += '<button class="ai-quick-report" onclick="showMonthlyReport()">📅 成长月报</button>';
+  html += '<button class="ai-quick-report" onclick="showWeeklyReport()">'+ic('report')+'<span>成长周报</span></button>';
+  html += '<button class="ai-quick-report" onclick="showMonthlyReport()">'+ic('calendar')+'<span>成长月报</span></button>';
   box.innerHTML = html;
 }
 /* 内嵌默认 DeepSeek Key（用户已提供，打开链接即用 AI，无需配置） */
