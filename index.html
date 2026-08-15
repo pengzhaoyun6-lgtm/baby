@@ -1391,7 +1391,7 @@ body.dark .group-nav-item{background:rgba(255,255,255,.08)}
 'use strict';
 
 /* ===== 版本号（改版时只改这里，侧边栏自动显示） ===== */
-var APP_VERSION = '5.5.0';
+var APP_VERSION = '5.5.1';
 function renderVersion(){
   var el = document.getElementById('sideVersion');
   if(el) el.textContent = 'v' + APP_VERSION;
@@ -2040,7 +2040,9 @@ function updateHeader(){
   var recIcons = { '妈妈':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>', '奶奶':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M12 12l-2 3 2 2 2-2-2-3z"/></svg>', '爸爸':'<svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M8 8l4 4 4-4"/></svg>' };
   rec.innerHTML = (recIcons[b.recorder]||recIcons['妈妈'])+' '+esc(b.recorder||'妈妈');
   var av = document.getElementById('babyAvatar');
-  if(b.gender==='girl'){
+  if(b.photo){
+    av.innerHTML = '<img src="'+b.photo+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">';
+  }else if(b.gender==='girl'){
     av.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="5"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/><path d="M7 6l-3-1M17 6l3-1"/></svg>';
   }else{
     av.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26"><circle cx="12" cy="9" r="5"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/><path d="M5 8l-1 3M19 8l1 3"/></svg>';
